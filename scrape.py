@@ -2,65 +2,91 @@
 python3 -m venv env
 """
 
+from pathlib import Path
+
 import requests
 import html2text
 from bs4 import BeautifulSoup
-import pandas as pd
+
+from ParamsIndexRepo import ParamsIndexRepo, BASE_DIR
 
 BASE_URL = 'https://artway.eu/content.php'
 
-SEED_PARAMS = [ {'title': 'Articles', 'id': '74', 'action': 'show', 'lang': 'en'}, ]
-visited = {}
-seen = {}
+SEED_PARAMS = [ 
+    {'title': 'Articles', 'id': '74', 'action': 'show', 'lang': 'en'}, 
+    {'title': 'Art and the Church', 'id': '4', 'action': 'show', 'lang': 'en'}, 
+]
+
+
+visited = ParamsIndexRepo(BASE_DIR, 'visited.json')
+seen = ParamsIndexRepo(BASE_DIR, 'seen.json')
 
 def url(params):
     paramsStr = '&'.join([f'{k}={v}' for k, v in params.items()])
     return BASE_URL + '?' + paramsStr
 
 def extract_query_params(params):
-    paramsList = params.replace("?", "").split('&')
+    params = params.split('?')[1]
+    if params[-1] == '&':
+        params = params[:-1]
+    paramsList = params.split('&')
     return {p.split('=')[0]: p.split('=')[1] for p in paramsList}
 
-def get_links(params, query, location):
-    parent_id = params['id']
-    page = requests.get(url(params))
-    soup = BeautifulSoup(page.text, 'html.parser')
-    content = soup.find_all(query['tag'], query['attrs'])
-    anchors = content[0].find_all('a')
-    return [{"title": a.contents[0].strip(), 'location': location, 'parent': parent_id,  **extract_query_params(a['href'])} for a in anchors]
-
-def get_subnav_links(params):
-    return get_links(params, {'tag': 'ul', 'attrs': {'class':'subnav options'}}, 'subnav')
-
-def get_content_links(params):
-    return get_links(params, {'tag': 'div', 'attrs': {'id':'contentmain'}}, 'content')
-
-def push_visited(params):
-    for param in params:
-        visited[param['id']] = param
-
-def push_seen(params):
-    for param in params:
-        seen[param['id']] = param
-
 def unvisited():
-    return [v for v in visited.values() if v['id'] not in seen]
+    return [s for s in seen.values() if not visited.contains(s)]
+
+def get_links(page_soup, params, query, location):
+    parent_id = params['id']
+    content = page_soup.find_all(query['tag'], query['attrs'])
+    anchors = content[0].find_all('a')
+    result = []
+    for a in anchors:
+        title = a.get_text() if a.contents else "UNKOWN"
+        params = extract_query_params(a['href'])
+        result.append({"title": title, 'location': location, 'parent': parent_id,  **params})
+    return result
+
+def get_subnav_links(page_soup, params):
+    return get_links(page_soup, params, {'tag': 'ul', 'attrs': {'class':'subnav options'}}, 'subnav')
+
+def get_content_links(page_soup, params):
+    return get_links(page_soup, params, {'tag': 'div', 'attrs': {'id':'contentmain'}}, 'content')
+
+def get_content_stats(page_soup):
+    content = page_soup.find_all('div', {'id':'contentmain'})
+    image_urls = [img['src'] for img in content[0].find_all('img')] 
+    content_length = len(html2text.html2text(content[0].prettify()))
+    return {'image_urls': image_urls, 'length': content_length}
 
 
-articles_subnav = get_subnav_links(SEED_PARAMS[0])
-push_visited(SEED_PARAMS)
+def get_page_links(params):
+    if visited.contains(params):
+        return
+    print("Visiting: ", params['title'])
+    page = requests.get(url(params))
+    page_soup = BeautifulSoup(page.text, 'html.parser')
+    seen.pushOne(params)
+    subnav_links = get_subnav_links(page_soup, params)
+    seen.pushMany(subnav_links)
+    if params['action'] == 'list':
+        content_links = get_content_links(page_soup, params)
+        print("Found: ", len(content_links), " articles")
+        seen.pushMany(content_links)
 
-for nav in articles_subnav:
-    if nav['id'] in visited:
-        continue
-    push_visited([nav])
-    print("Visiting: ", nav['title'])
-    sub_aritcles = get_content_links(nav)
-    push_visited(sub_aritcles) # not really visited but just for show
+    content_stats = get_content_stats(page_soup)
+    params = {**params, **content_stats}
+    visited.pushOne(params)
 
-    print("Found: ", len(sub_aritcles), " articles")
 
-df = pd.DataFrame(visited.values())
-df.to_csv('/tmp/artway_index.csv', index=False)
+Path(BASE_DIR).mkdir(parents=True, exist_ok=True)
+
+seen.pushMany(SEED_PARAMS)
+
+for i in range(0, 4):
+    print("Iteration: ", i)
+    for params in unvisited():
+        get_page_links(params)
+
+
 
 
