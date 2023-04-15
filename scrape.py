@@ -1,7 +1,3 @@
-"""
-python3 -m venv env
-"""
-
 from pathlib import Path
 
 import requests
@@ -82,11 +78,9 @@ Path(BASE_DIR).mkdir(parents=True, exist_ok=True)
 
 seen.pushMany(SEED_PARAMS)
 
-for i in range(0, 4):
+for i in range(0, 5):
     print("Iteration: ", i)
     for params in unvisited():
         get_page_links(params)
-
-
 
 
