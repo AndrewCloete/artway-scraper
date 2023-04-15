@@ -1,0 +1,7 @@
+lxml
+requests
+html2text
+beautifulsoup4
+pandas
+
+
