@@ -38,6 +38,8 @@ def get_links(page_soup, params, query, location):
     result = []
     for a in anchors:
         title = a.get_text() if a.contents else "UNKOWN"
+        title = title.strip()
+        # title = bytes(title, 'unicode_escape').decode('unicode_escape', 'ignore').strip()
         params = extract_query_params(a['href'])
         result.append({"title": title, 'location': location, 'parent': parent_id,  **params})
     return result
@@ -48,10 +50,21 @@ def get_subnav_links(page_soup, params):
 def get_content_links(page_soup, params):
     return get_links(page_soup, params, {'tag': 'div', 'attrs': {'id':'contentmain'}}, 'content')
 
-def get_content_stats(page_soup):
+
+def get_content(params, page_soup):
     content = page_soup.find_all('div', {'id':'contentmain'})
     image_urls = [img['src'] for img in content[0].find_all('img')] 
-    content_length = len(html2text.html2text(content[0].prettify()))
+    # content_text = html2text.html2text(content[0].prettify())
+    content_text = content[0].prettify() 
+    content_length = len(content_text)
+
+    content_dir = Path(BASE_DIR) / 'content' / f"{params['id']}_{params['action']}_{params['title']}"
+    content_dir.mkdir(parents=True, exist_ok=True)
+    # Persist content
+    with open(content_dir / 'content.html', 'w') as f:
+        f.write(content_text)
+
+
     return {'image_urls': image_urls, 'length': content_length}
 
 
@@ -60,6 +73,7 @@ def get_page_links(params):
         return
     print("Visiting: ", params['title'])
     page = requests.get(url(params))
+    page.encoding = 'unicode_escape'
     page_soup = BeautifulSoup(page.text, 'html.parser')
     seen.pushOne(params)
     subnav_links = get_subnav_links(page_soup, params)
@@ -69,7 +83,7 @@ def get_page_links(params):
         print("Found: ", len(content_links), " articles")
         seen.pushMany(content_links)
 
-    content_stats = get_content_stats(page_soup)
+    content_stats = get_content(params, page_soup)
     params = {**params, **content_stats}
     visited.pushOne(params)
 

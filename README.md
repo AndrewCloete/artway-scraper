@@ -5,7 +5,7 @@ Restore dependencies
 ```sh
 python3 -m venv env
 activate
-pip intall -r requirements.txt
+pip install -r requirements.txt
 ```
 
 Scrape to index site
