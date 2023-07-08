@@ -3,6 +3,10 @@ import json
 
 BASE_DIR = '/tmp/artway'
 
+def get_params_dir(params):
+    return Path(BASE_DIR) / 'content' / f"{params['id']}_{params['action']}_{params['title']}"
+
+
 class ParamsIndexRepo:
     def __init__(self, base_dir, filename):
         self.base_dir = base_dir

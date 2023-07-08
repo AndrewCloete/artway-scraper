@@ -1,10 +1,11 @@
 from pathlib import Path
 
 import requests
-import html2text
 from bs4 import BeautifulSoup
+import html2text
+import markdown
 
-from ParamsIndexRepo import ParamsIndexRepo, BASE_DIR
+from ParamsIndexRepo import ParamsIndexRepo, BASE_DIR, get_params_dir
 
 BASE_URL = 'https://artway.eu/content.php'
 
@@ -37,7 +38,7 @@ def get_links(page_soup, params, query, location):
     anchors = content[0].find_all('a')
     result = []
     for a in anchors:
-        title = a.get_text() if a.contents else "UNKOWN"
+        title = a.get_text() if a.contents else "UNKNOWN"
         title = title.strip()
         # title = bytes(title, 'unicode_escape').decode('unicode_escape', 'ignore').strip()
         params = extract_query_params(a['href'])
@@ -54,11 +55,13 @@ def get_content_links(page_soup, params):
 def get_content(params, page_soup):
     content = page_soup.find_all('div', {'id':'contentmain'})
     image_urls = [img['src'] for img in content[0].find_all('img')] 
-    # content_text = html2text.html2text(content[0].prettify())
-    content_text = content[0].prettify() 
-    content_length = len(content_text)
 
-    content_dir = Path(BASE_DIR) / 'content' / f"{params['id']}_{params['action']}_{params['title']}"
+    # Convert HTML to markdown and then back to HTML to keep only the essential structure
+    content_text = html2text.html2text(str(content[0]))
+    content_text = markdown.markdown(content_text)
+
+    content_length = len(content_text)
+    content_dir = get_params_dir(params)
     content_dir.mkdir(parents=True, exist_ok=True)
     # Persist content
     with open(content_dir / 'content.html', 'w') as f:
