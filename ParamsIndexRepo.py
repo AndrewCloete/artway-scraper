@@ -39,6 +39,13 @@ class ParamsIndexRepo:
     def contains(self, params):
         return params['id'] in self.entries
 
+    def get(self, id):
+        if not id:
+            return None
+        if not self.contains(id):
+            return None
+        return self.entries[id]
+
     def values(self):
         return self.entries.values()
 

@@ -22,13 +22,27 @@ for entry in visited.values():
     with open(f"{content_dir}/content.html", 'r') as f:
         post_content = f.read()
 
+    id = entry['id']
+    parent_title = 'no_parent'
+    if 'parent' in entry:
+        parent_id = entry['parent']
+        parent = visited.get(parent_id)
+        parent_title = parent['title'] if parent else 'no_parent'
+
+    meta = {
+        "id": id,
+        "parent": parent_title,
+    }
+
     post_payload = {
         "title": entry['title'],
+        "id": entry['id'],
         "date": "2021-01-01T00:00:00",
         "status": "draft",
         "author": 1,
         "format": "standard",
         "content": post_content,
+        "meta": meta,
     }
 
     response = requests.post(url, auth=(username, password), json=post_payload)
