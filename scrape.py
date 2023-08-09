@@ -57,15 +57,20 @@ def get_content(params, page_soup):
     image_urls = [img['src'] for img in content[0].find_all('img')] 
 
     # Convert HTML to markdown and then back to HTML to keep only the essential structure
-    content_text = html2text.html2text(str(content[0]))
-    content_text = markdown.markdown(content_text)
+    raw_content = str(content[0])
+    markdown_content = html2text.html2text(raw_content)
+    rehidrated_html_content = markdown.markdown(markdown_content)
 
-    content_length = len(content_text)
+    content_length = len(rehidrated_html_content)
     content_dir = get_params_dir(params)
     content_dir.mkdir(parents=True, exist_ok=True)
     # Persist content
+    with open(content_dir / 'original.html', 'w') as f:
+        f.write(raw_content)
+    with open(content_dir / 'markdown.md', 'w') as f:
+        f.write(markdown_content)
     with open(content_dir / 'content.html', 'w') as f:
-        f.write(content_text)
+        f.write(rehidrated_html_content)
 
 
     return {'image_urls': image_urls, 'length': content_length}
