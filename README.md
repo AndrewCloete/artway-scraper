@@ -17,3 +17,7 @@ Write the index to csv for easy viewing
 ```sh
 python stats.py
 ```
+
+
+# Stories
+- Loading of posts to wordpress must be idempotent (ie skip or replace existing posts, NOT duplicate)
