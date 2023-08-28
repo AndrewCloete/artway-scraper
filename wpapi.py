@@ -69,9 +69,9 @@ for entry in visited.values():
     if entry["action"] == "list":
         if "location" in entry and entry["location"] == "subnav":
             print("Creating category")
-            create_category(entry)
+            # create_category(entry)
         print("skipping list")
         continue
 
-    # create_post(entry)
-    # time.sleep(1)
+    create_post(entry)
+    time.sleep(1)
