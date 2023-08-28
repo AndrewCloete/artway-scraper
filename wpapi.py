@@ -6,7 +6,7 @@ from ParamsIndexRepo import ParamsIndexRepo, BASE_DIR, get_params_dir
 BASE_URL = "https://2r095.wpdevsite.co"
 
 username = "andrew"
-password = "xTwH tN0f bQHv E8cD 61mx kcZn"
+password = "<password>"
 url = BASE_URL + "/wp-json/wp/v2/posts"
 
 # response = requests.get(url, auth=(username, password))
