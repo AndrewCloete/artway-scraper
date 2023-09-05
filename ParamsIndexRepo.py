@@ -33,12 +33,16 @@ class ParamsIndexRepo:
             json.dump(self.entries, f, indent=4)
 
     def pushOne(self, params):
-        self.entries[params["id"]] = params
+        if params["id"] not in self.entries:
+            self.entries[params["id"]] = []
+        self.entries[params["id"]].append(params)
         self.save()
 
     def pushMany(self, paramss):
         for params in paramss:
-            self.entries[params["id"]] = params
+            if params["id"] not in self.entries:
+                self.entries[params["id"]] = []
+            self.entries[params["id"]].append(params)
         self.save()
 
     def contains(self, params):
@@ -52,4 +56,4 @@ class ParamsIndexRepo:
         return self.entries[id]
 
     def values(self):
-        return self.entries.values()
+        return [row for entry in self.entries.values() for row in entry]
