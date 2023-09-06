@@ -122,7 +122,11 @@ def extract_query_params(href):
 
 
 def unvisited():
-    return [s for s in seen.values() if not visited.contains(s)]
+    # Sort to promote a breadth-first search
+    return sorted(
+        [s for s in seen.values() if not visited.contains(s)],
+        key=lambda s: int(s["id"]),
+    )
 
 
 def get_links(page_soup, params, query, location):
@@ -187,7 +191,7 @@ def get_content(params, page_soup):
 def get_page_links(params):
     if visited.contains(params):
         return
-    print("Visiting: ", params["title"])
+    print("Visiting: ", params["id"], params["title"])
     page = requests.get(url(params))
     page.encoding = "unicode_escape"
     page_soup = BeautifulSoup(page.text, "html.parser")
