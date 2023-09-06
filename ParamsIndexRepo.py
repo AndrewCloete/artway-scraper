@@ -5,11 +5,7 @@ BASE_DIR = "/tmp/artway"
 
 
 def get_params_dir(params):
-    return (
-        Path(BASE_DIR)
-        / "content"
-        / f"{params['id']}_{params['action']}_{params['title']}"
-    )
+    return Path(BASE_DIR) / "content" / f"{params['id']}_{params['title']}"
 
 
 class ParamsIndexRepo:
@@ -17,6 +13,7 @@ class ParamsIndexRepo:
         self.base_dir = base_dir
         self.filename = filename
         self.path = Path(base_dir) / filename
+        self.primary_key = "href_path"
         if not Path(base_dir).exists():
             Path(base_dir).mkdir(parents=True, exist_ok=True)
         if not self.path.exists():
@@ -32,21 +29,26 @@ class ParamsIndexRepo:
         with open(self.path, "w") as f:
             json.dump(self.entries, f, indent=4)
 
+    def safe_key(self, params):
+        key = params[self.primary_key]
+        key = key.replace("=", "").replace("&", "")
+        return key
+
     def pushOne(self, params):
-        if params["id"] not in self.entries:
-            self.entries[params["id"]] = []
-        self.entries[params["id"]].append(params)
+        if self.safe_key(params) not in self.entries:
+            self.entries[self.safe_key(params)] = []
+        self.entries[self.safe_key(params)].append(params)
         self.save()
 
     def pushMany(self, paramss):
         for params in paramss:
-            if params["id"] not in self.entries:
-                self.entries[params["id"]] = []
-            self.entries[params["id"]].append(params)
+            if self.safe_key(params) not in self.entries:
+                self.entries[self.safe_key(params)] = []
+            self.entries[self.safe_key(params)].append(params)
         self.save()
 
     def contains(self, params):
-        return params["id"] in self.entries
+        return self.safe_key(params) in self.entries
 
     def get(self, id):
         if not id:

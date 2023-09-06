@@ -6,7 +6,12 @@ def best_effort_title_parse(full_title_string):
         result = re.search(r"(.*) - VM - (.*)", full_title_string)
         if len(result.groups()) == 2:
             (title, author) = result.groups()
-            return {"title": title, "author": author}
+            return {"title": title, "author": author, "vm": True}
+    if " - BM - " in full_title_string:
+        result = re.search(r"(.*) - BM - (.*)", full_title_string)
+        if len(result.groups()) == 2:
+            (title, author) = result.groups()
+            return {"title": title, "author": author, "vm": True}
     if " - by " in full_title_string:
         result = re.search(r"(.*) - by (.*)", full_title_string)
         if len(result.groups()) == 2:

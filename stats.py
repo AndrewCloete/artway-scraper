@@ -12,7 +12,15 @@ dfv.to_csv("/tmp/artway_index_visited.csv", index=False)
 
 dfs = pd.DataFrame(seen.values())
 dfs["id"] = dfs["id"].astype(int)
-# dfs['parent'] = dfs['parent'].astype(int)
 dfs.sort_values(by="id", inplace=True)
 dfs.to_csv("/tmp/artway_index_seen.csv", index=False)
-dfs[dfs["id"].duplicated()].to_csv("/tmp/artway_index_seen_dup.csv", index=False)
+
+df_id = dfs[~dfs["id"].duplicated(keep="first")]
+df_id = df_id[["id", "title"]].set_index("id")
+print(df_id)
+print()
+
+
+dfs_parents = dfs.groupby(["id", "title"])["p_id"].apply(",".join)
+print(dfs_parents)
+dfs_parents.to_csv("/tmp/artway_parents.csv")

@@ -12,14 +12,90 @@ from ParamsIndexRepo import ParamsIndexRepo, BASE_DIR, get_params_dir
 BASE_URL = "https://artway.eu/content.php"
 
 SEED_PARAMS = [
-    {"title": "Artists", "id": "1", "action": "show", "lang": "en", "p_id": "0"},
-    {"title": "Articles", "id": "74", "action": "show", "lang": "en", "p_id": "0"},
+    {
+        "title": "Articles",
+        "id": "74",
+        "action": "show",
+        "lang": "en",
+        "p_id": "0",
+        "href_path": "id=74&action=show&lang=en",
+    },
+    {
+        "title": "Artikelen",
+        "id": "74",
+        "lang": "nl",
+        "action": "show",
+        "p_id": "0",
+        "href_path": "id=74&action=show&lang=nl",
+    },
+    {
+        "title": "Articles - Deutsche Artikel",
+        "id": "64",
+        "lang": "en",
+        "p_id": "0",
+        "href_path": "id=64&lang=en",
+    },
+    {
+        "title": "Articles - Articles francais",
+        "id": "94",
+        "lang": "en",
+        "p_id": "0",
+        "href_path": "id=94&lang=en",
+    },
+    {
+        "title": "Articles - Portuguese",
+        "id": "98",
+        "lang": "en",
+        "p_id": "0",
+        "href_path": "id=98&lang=en",
+    },
     {
         "title": "Art and the Church",
         "id": "4",
         "action": "show",
         "lang": "en",
         "p_id": "0",
+        "href_path": "id=4&lang=en&action=show",
+    },
+    {
+        "title": "Kerk & kunst",
+        "id": "4",
+        "action": "show",
+        "lang": "nl",
+        "p_id": "0",
+        "href_path": "id=4&lang=nl&action=show",
+    },
+    {
+        "title": "Travel tips",
+        "id": "6",
+        "action": "show",
+        "lang": "en",
+        "p_id": "0",
+        "href_path": "id=6&lang=en&action=show",
+    },
+    {
+        "title": "Reistips",
+        "id": "6",
+        "action": "show",
+        "lang": "nl",
+        "p_id": "0",
+        "href_path": "id=6&lang=nl&action=show",
+    },
+    {
+        "title": "Artists",
+        "id": "1",
+        "action": "show",
+        "lang": "en",
+        "p_id": "0",
+        "href_path": "id=1&action=show&lang=en",
+    },
+    {
+        "title": "Kunstenaars",
+        "id": "1",
+        "action": "show",
+        "lang": "nl",
+        "p_id": "0",
+        "href_path": "id=1&action=show&lang=nl",
     },
 ]
 
@@ -29,18 +105,20 @@ seen = ParamsIndexRepo(BASE_DIR, "seen.json")
 
 
 def url(params):
-    paramsStr = "&".join(
-        [f"{k}={v}" for k, v in params.items() if not k.startswith("p_")]
-    )
-    return BASE_URL + "?" + paramsStr
+    # paramsStr = "&".join(
+    #     [f"{k}={v}" for k, v in params.items() if not k.startswith("p_")]
+    # )
+    return BASE_URL + "?" + params["href_path"]
 
 
 def extract_query_params(href):
-    params = href.split("?")[1]
-    if params[-1] == "&":
-        params = params[:-1]
-    paramsList = params.split("&")
-    return {p.split("=")[0]: p.split("=")[1] for p in paramsList}
+    href_path = href.split("?")[1]
+    if href_path[-1] == "&":
+        href_path = href_path[:-1]
+    paramsList = href_path.split("&")
+    params = {p.split("=")[0]: p.split("=")[1] for p in paramsList}
+    params["href_path"] = href_path
+    return params
 
 
 def unvisited():
@@ -48,7 +126,15 @@ def unvisited():
 
 
 def get_links(page_soup, params, query, location):
-    not_pass_thru = ["action", "lang", "location"]
+    not_pass_thru = [
+        "lang",
+        "title",
+        "href_path",
+        "p_id",
+        "p_action",
+        "p_location",
+        "p_type",
+    ]
     parent_params = {f"p_{k}": v for k, v in params.items() if k not in not_pass_thru}
     content = page_soup.find_all(query["tag"], query["attrs"])
     anchors = content[0].find_all("a")
@@ -108,7 +194,7 @@ def get_page_links(params):
     seen.pushOne(params)
     subnav_links = get_subnav_links(page_soup, params)
     seen.pushMany(subnav_links)
-    if params["action"] == "list":
+    if "action" not in params or params["action"] == "list":
         content_links = get_content_links(page_soup, params)
         print("Found: ", len(content_links), " articles")
         seen.pushMany(content_links)
