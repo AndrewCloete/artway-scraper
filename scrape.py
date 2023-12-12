@@ -3,7 +3,6 @@ from pathlib import Path
 import requests
 from bs4 import BeautifulSoup
 import html2text
-import markdown
 
 import lib
 
@@ -144,10 +143,9 @@ def get_links(page_soup, params, query, location):
     anchors = content[0].find_all("a")
     result = []
     for a in anchors:
-        full_title_string = a.get_text() if a.contents else "UNKNOWN"
+        full_title_string = a.get_text().encode('utf-8').decode('utf-8') if a.contents else "UNKNOWN"
         full_title_string = full_title_string.strip()
         parsed_title = lib.best_effort_title_parse(full_title_string)
-        # title = bytes(title, 'unicode_escape').decode('unicode_escape', 'ignore').strip()
         params = extract_query_params(a["href"])
         result.append({**parsed_title, "location": location, **parent_params, **params})
     return result
@@ -172,9 +170,8 @@ def get_content(params, page_soup):
     # Convert HTML to markdown and then back to HTML to keep only the essential structure
     raw_content = str(content[0])
     markdown_content = html2text.html2text(raw_content)
-    rehidrated_html_content = markdown.markdown(markdown_content)
 
-    content_length = len(rehidrated_html_content)
+    content_length = len(raw_content)
     content_dir = get_params_dir(params)
     content_dir.mkdir(parents=True, exist_ok=True)
     # Persist content
@@ -182,8 +179,6 @@ def get_content(params, page_soup):
         f.write(raw_content)
     with open(content_dir / "markdown.md", "w") as f:
         f.write(markdown_content)
-    with open(content_dir / "content.html", "w") as f:
-        f.write(rehidrated_html_content)
 
     return {"image_urls": image_urls, "length": content_length}
 
@@ -193,8 +188,7 @@ def get_page_links(params):
         return
     print("Visiting: ", params["id"], params["title"])
     page = requests.get(url(params))
-    page.encoding = "unicode_escape"
-    page_soup = BeautifulSoup(page.text, "html.parser")
+    page_soup = BeautifulSoup(page.content, "html.parser")
     seen.pushOne(params)
     subnav_links = get_subnav_links(page_soup, params)
     seen.pushMany(subnav_links)
