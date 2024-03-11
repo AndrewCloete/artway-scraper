@@ -1,7 +1,7 @@
 from pathlib import Path
 import json
 
-BASE_DIR = "/tmp/artway"
+BASE_DIR = "/Users/user/Workspace/artway-scraper/data"
 
 
 def get_params_dir(params):
