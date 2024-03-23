@@ -2,10 +2,19 @@ from pathlib import Path
 import json
 
 BASE_DIR = "/Users/user/Workspace/artway-scraper/data"
+AW_URL = "https://www.artway.eu"
 
 
-def get_params_dir(params):
-    return Path(BASE_DIR) / "content" / f"{params['id']}_{params['title']}"
+def get_params_dir(id, title):
+    return Path(BASE_DIR) / "content" / f"{id}_{title}"
+
+
+def get_html_path(id, title):
+    return get_params_dir(id, title) / "original.html"
+
+
+def get_html_path_named(id, title, name):
+    return get_params_dir(id, title) / f"{name}.html"
 
 
 class ParamsIndexRepo:

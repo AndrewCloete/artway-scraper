@@ -1,6 +1,6 @@
 import copy
 import pandas as pd
-from ParamsIndexRepo import ParamsIndexRepo, BASE_DIR, get_params_dir
+from ParamsIndexRepo import ParamsIndexRepo, AW_URL, BASE_DIR, get_params_dir
 
 visited = ParamsIndexRepo(BASE_DIR, "visited.json")
 
@@ -28,7 +28,6 @@ def post_filter(rec):
 
 posts = filter(post_filter, posts)
 
-AW_URL = "https://www.artway.eu"
 clean_posts = []
 for post in posts:
     p = copy.deepcopy(post)
