@@ -1,6 +1,11 @@
 import copy
 import pandas as pd
-from ParamsIndexRepo import ParamsIndexRepo, AW_URL, BASE_DIR, get_params_dir
+from ParamsIndexRepo import (
+    ParamsIndexRepo,
+    AW_URL,
+    BASE_DIR,
+    get_html_path_named,
+)
 
 visited = ParamsIndexRepo(BASE_DIR, "visited.json")
 
@@ -37,6 +42,9 @@ for post in posts:
     clean_posts.append(p)
 
 
+HTML_SELECT = "original"
+# HTML_SELECT = "clean"
+
 wpall_posts = []
 for post in clean_posts:
     p = {}
@@ -44,9 +52,9 @@ for post in clean_posts:
     p["common_id"] = post["id"]
     p["title"] = post["title"]
 
-    with open(
-        f"{BASE_DIR}/content/{post['id']}_{post['title']}/original.html", "r"
-    ) as f:
+    html_path = get_html_path_named(post["id"], post["title"], HTML_SELECT)
+
+    with open(html_path, "r") as f:
         content = f.read()
         p["body_text"] = content
 
@@ -58,4 +66,4 @@ for post in clean_posts:
 
 df = pd.DataFrame(wpall_posts)
 
-df.to_csv("/tmp/wpall_import.csv", na_rep="")
+df.to_csv(f"/tmp/wpall_import_{HTML_SELECT}.csv", na_rep="")

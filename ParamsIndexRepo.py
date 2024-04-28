@@ -13,6 +13,10 @@ def get_html_path(id, title):
     return get_params_dir(id, title) / "original.html"
 
 
+def get_flags_path():
+    return Path(BASE_DIR) / "flags.csv"
+
+
 def get_html_path_named(id, title, name):
     return get_params_dir(id, title) / f"{name}.html"
 
@@ -62,7 +66,7 @@ class ParamsIndexRepo:
     def get(self, id):
         if not id:
             return None
-        if not id in self.entries:
+        if id not in self.entries:
             return None
         return self.entries[id]
 
