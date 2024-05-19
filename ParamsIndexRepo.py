@@ -1,7 +1,7 @@
 from pathlib import Path
 import json
 
-from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
+from urllib.parse import parse_qsl, urlencode
 
 BASE_DIR = "/Users/user/Workspace/artway-scraper/data"
 AW_URL = "https://www.artway.eu"
@@ -27,21 +27,9 @@ def get_html_path_named(id, title, name):
     return get_params_dir(id, title) / f"{name}.html"
 
 
-def normalize_url(url):
-    parsed_url = urlparse(url)
-    sorted_params = sorted(parse_qsl(parsed_url.query))
-    normalized_query = urlencode(sorted_params)
-    normalized_url = urlunparse(
-        (
-            parsed_url.scheme,
-            parsed_url.netloc,
-            parsed_url.path,
-            "",
-            normalized_query,
-            "",
-        )
-    )
-    return normalized_url
+def normalize_qparams(qparams):
+    sorted_params = sorted(parse_qsl(qparams))
+    return urlencode(sorted_params)
 
 
 def filter_unique_hrefs(entries):
@@ -105,5 +93,5 @@ class ParamsIndexRepo:
     def unique_href_values(self):
         entries = [row for entry in self.entries.values() for row in entry]
         for entry in entries:
-            entry["href_path"] = normalize_url(entry["href_path"])
+            entry["href_path"] = normalize_qparams(entry["href_path"])
         return filter_unique_hrefs(entries)

@@ -1,15 +1,14 @@
 import copy
-import pandas as pd
 from ParamsIndexRepo import (
     ParamsIndexRepo,
     AW_URL,
     BASE_DIR,
-    get_html_path_named,
 )
+import pandas as pd
 
 visited = ParamsIndexRepo(BASE_DIR, "visited.json")
 
-posts = visited.values()
+posts = visited.unique_href_values()
 
 
 def match_filter(key, value):
@@ -42,8 +41,10 @@ for post in posts:
     clean_posts.append(p)
 
 
-HTML_SELECT = "original"
-# HTML_SELECT = "clean"
+# HTML_SELECT = "original"
+count = 0
+HTML_SELECT = "clean"
+
 
 wpall_posts = []
 for post in clean_posts:

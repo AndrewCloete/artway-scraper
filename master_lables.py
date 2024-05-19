@@ -13,7 +13,6 @@ visited = ParamsIndexRepo(BASE_DIR, "visited.json")
 posts = visited.unique_href_values()
 
 df = pd.DataFrame(posts)
-df = df.drop_duplicates(subset="href_path", keep="last")
 
 df_list = df[df["action"] == "list"]
 df_show = df[df["action"] == "show"]
@@ -31,9 +30,7 @@ len_show_nl = df_show_nl.shape[0]
 len_unique_id = df_unique_id.shape[0]
 
 cols = ["id", "link", "lang", "title", "author", "length", "vm"]
-df_show[cols].to_csv(get_master_sheet_path())
-print(df_show.shape)
-print(df_show["id"].unique().shape)
+df_show[cols].to_csv(get_master_sheet_path(), index=False)
 
 stats = {
     "list": len_list,

@@ -6,6 +6,7 @@ from ParamsIndexRepo import (
     get_html_path_named,
     get_flags_path,
     AW_URL,
+    get_master_sheet_path,
 )
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -13,12 +14,12 @@ import pandas as pd
 
 visited = ParamsIndexRepo(BASE_DIR, "visited.json")
 
-posts = visited.values()
+posts = visited.unique_href_values()
 
 
 def clean_html(post):
-    id, title, href_path = itemgetter("id", "title", "href_path")(post)
-    flag = {"id": id, "href": f"{AW_URL}/content.php?{href_path}", "title": title}
+    id, title = itemgetter("id", "title")(post)
+    flag = {"id": id}
     path_original = get_html_path(id, title)
     with open(path_original, "r") as f:
         content = f.read()
@@ -109,4 +110,14 @@ for post in posts:  # [1020:1040]:
     flag = clean_html(post)
     flags.append(flag)
 
-    df = pd.DataFrame(flags).to_csv(get_flags_path())
+
+df_master = pd.read_csv(get_master_sheet_path())
+df_flags = pd.DataFrame(flags)
+df_master = df_master.astype({"id": "int64"})
+df_flags = df_flags.astype({"id": "int64"})
+
+
+df = df_master.merge(df_flags, on="id", how="inner")
+df = df.drop_duplicates(subset="link", keep="last")
+
+df.to_csv(get_flags_path(), index=False)
