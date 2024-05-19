@@ -1,6 +1,8 @@
 from pathlib import Path
 import json
 
+from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
+
 BASE_DIR = "/Users/user/Workspace/artway-scraper/data"
 AW_URL = "https://www.artway.eu"
 
@@ -17,8 +19,38 @@ def get_flags_path():
     return Path(BASE_DIR) / "flags.csv"
 
 
+def get_master_sheet_path():
+    return Path(BASE_DIR) / "master_sheet.csv"
+
+
 def get_html_path_named(id, title, name):
     return get_params_dir(id, title) / f"{name}.html"
+
+
+def normalize_url(url):
+    parsed_url = urlparse(url)
+    sorted_params = sorted(parse_qsl(parsed_url.query))
+    normalized_query = urlencode(sorted_params)
+    normalized_url = urlunparse(
+        (
+            parsed_url.scheme,
+            parsed_url.netloc,
+            parsed_url.path,
+            "",
+            normalized_query,
+            "",
+        )
+    )
+    return normalized_url
+
+
+def filter_unique_hrefs(entries):
+    seen = {}
+    for entry in entries:
+        value = entry["href_path"]
+        if value not in seen:
+            seen[value] = entry
+    return list(seen.values())
 
 
 class ParamsIndexRepo:
@@ -70,5 +102,8 @@ class ParamsIndexRepo:
             return None
         return self.entries[id]
 
-    def values(self):
-        return [row for entry in self.entries.values() for row in entry]
+    def unique_href_values(self):
+        entries = [row for entry in self.entries.values() for row in entry]
+        for entry in entries:
+            entry["href_path"] = normalize_url(entry["href_path"])
+        return filter_unique_hrefs(entries)
