@@ -8,13 +8,38 @@ from ParamsIndexRepo import (
     AW_URL,
     get_master_sheet_path,
 )
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 import pandas as pd
 
 
 visited = ParamsIndexRepo(BASE_DIR, "visited.json")
 
 posts = visited.unique_href_values()
+
+
+def remove_empty_elements(soup):
+    # Find all <span> and <div> elements
+    elements = soup.find_all(["span", "div"])
+    empty_elements = []
+
+    # Identify empty elements
+    for element in elements:
+        # Check if the element is empty or contains only whitespace
+        if not element.text.strip() and not element.contents:
+            empty_elements.append(element)
+        elif not element.text.strip() and all(
+            child in empty_elements
+            for child in element.contents
+            if isinstance(child, Tag)
+        ):
+            empty_elements.append(element)
+
+    # If we have empty elements, decompose them
+    if empty_elements:
+        for element in empty_elements:
+            element.decompose()
+        # Recursively call the function to check again
+        remove_empty_elements(soup)
 
 
 def clean_html(post):
@@ -25,6 +50,10 @@ def clean_html(post):
         content = f.read()
 
     soup = BeautifulSoup(content, "html.parser")
+    html_string = str(soup)
+    cleaned_html = html_string.replace("&nbsp;", "")
+    soup = BeautifulSoup(cleaned_html, "html.parser")
+
     inner_f = soup.find_all("div", {"class": "art_threethird"})
     if len(inner_f) > 1:
         raise Exception("more than one art_threethird")
@@ -91,6 +120,8 @@ def clean_html(post):
     #         span.decompose()
 
     # print(inner.prettify())
+
+    remove_empty_elements(soup)
 
     path_clean = get_html_path_named(id, title, "clean")
     with open(path_clean, "w") as f:

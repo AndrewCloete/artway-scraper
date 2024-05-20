@@ -3,6 +3,8 @@ from ParamsIndexRepo import (
     ParamsIndexRepo,
     AW_URL,
     BASE_DIR,
+    get_html_path_named,
+    get_wpallimport_path,
 )
 import pandas as pd
 
@@ -67,4 +69,4 @@ for post in clean_posts:
 
 df = pd.DataFrame(wpall_posts)
 
-df.to_csv(f"/tmp/wpall_import_{HTML_SELECT}.csv", na_rep="")
+df.to_csv(get_wpallimport_path(HTML_SELECT), na_rep="")

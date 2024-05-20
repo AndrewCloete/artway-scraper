@@ -23,6 +23,10 @@ def get_master_sheet_path():
     return Path(BASE_DIR) / "master_sheet.csv"
 
 
+def get_wpallimport_path(html_select):
+    return Path(BASE_DIR) / f"wpall_import_{html_select}.csv"
+
+
 def get_html_path_named(id, title, name):
     return get_params_dir(id, title) / f"{name}.html"
 

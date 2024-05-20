@@ -40,3 +40,5 @@ stats = {
     "df_unique_id": len_unique_id,
 }
 print(stats)
+print(len(df_show["id"]) - len(df_show["id"].drop_duplicates()))
+print(len(df_show[df_show["vm"] == True]["author"].unique()))
