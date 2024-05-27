@@ -7,12 +7,12 @@ BASE_DIR = "/Users/user/Workspace/artway-scraper/data"
 AW_URL = "https://www.artway.eu"
 
 
-def get_params_dir(id, title):
-    return Path(BASE_DIR) / "content" / f"{id}_{title}"
+def get_params_dir(id, lang, title):
+    return Path(BASE_DIR) / "content" / f"{id}_{lang}_{title}"
 
 
-def get_html_path(id, title):
-    return get_params_dir(id, title) / "original.html"
+def get_html_path(id, lang, title):
+    return get_params_dir(id, lang, title) / "original.html"
 
 
 def get_flags_path():
@@ -27,8 +27,8 @@ def get_wpallimport_path(html_select):
     return Path(BASE_DIR) / f"wpall_import_{html_select}.csv"
 
 
-def get_html_path_named(id, title, name):
-    return get_params_dir(id, title) / f"{name}.html"
+def get_html_path_named(id, lang, title, name):
+    return get_params_dir(id, lang, title) / f"{name}.html"
 
 
 def normalize_qparams(qparams):

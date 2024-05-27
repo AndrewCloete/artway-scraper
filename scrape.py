@@ -104,9 +104,6 @@ seen = ParamsIndexRepo(BASE_DIR, "seen.json")
 
 
 def url(params):
-    # paramsStr = "&".join(
-    #     [f"{k}={v}" for k, v in params.items() if not k.startswith("p_")]
-    # )
     return BASE_URL + "?" + params["href_path"]
 
 
@@ -123,7 +120,7 @@ def extract_query_params(href):
 def unvisited():
     # Sort to promote a breadth-first search
     return sorted(
-        [s for s in seen.values() if not visited.contains(s)],
+        [s for s in seen.unique_href_values() if not visited.contains(s)],
         key=lambda s: int(s["id"]),
     )
 
@@ -143,7 +140,9 @@ def get_links(page_soup, params, query, location):
     anchors = content[0].find_all("a")
     result = []
     for a in anchors:
-        full_title_string = a.get_text().encode('utf-8').decode('utf-8') if a.contents else "UNKNOWN"
+        full_title_string = (
+            a.get_text().encode("utf-8").decode("utf-8") if a.contents else "UNKNOWN"
+        )
         full_title_string = full_title_string.strip()
         parsed_title = lib.best_effort_title_parse(full_title_string)
         params = extract_query_params(a["href"])
@@ -172,7 +171,8 @@ def get_content(params, page_soup):
     markdown_content = html2text.html2text(raw_content)
 
     content_length = len(raw_content)
-    content_dir = get_params_dir(params)
+    lang = params["lang"] if "lang" in params else "none"
+    content_dir = get_params_dir(id=params["id"], lang=lang, title=params["title"])
     content_dir.mkdir(parents=True, exist_ok=True)
     # Persist content
     with open(content_dir / "original.html", "w") as f:
