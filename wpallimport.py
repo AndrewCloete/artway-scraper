@@ -55,7 +55,9 @@ for post in clean_posts:
     p["common_id"] = post["id"]
     p["title"] = post["title"]
 
-    html_path = get_html_path_named(post["id"], post["title"], HTML_SELECT)
+    html_path = get_html_path_named(
+        post["id"], post["lang"], post["title"], HTML_SELECT
+    )
 
     with open(html_path, "r") as f:
         content = f.read()

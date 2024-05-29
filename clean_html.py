@@ -44,8 +44,9 @@ def remove_empty_elements(soup):
 
 def clean_html(post):
     id, title = itemgetter("id", "title")(post)
+    lang = post["lang"] if "lang" in post else "none"
     flag = {"id": id}
-    path_original = get_html_path(id, title)
+    path_original = get_html_path(id, lang, title)
     with open(path_original, "r") as f:
         content = f.read()
 
@@ -123,7 +124,7 @@ def clean_html(post):
 
     remove_empty_elements(soup)
 
-    path_clean = get_html_path_named(id, title, "clean")
+    path_clean = get_html_path_named(id, lang, title, "clean")
     with open(path_clean, "w") as f:
         f.write(str(inner))
         # content = f.read()
@@ -150,5 +151,16 @@ df_flags = df_flags.astype({"id": "int64"})
 
 df = df_master.merge(df_flags, on="id", how="inner")
 df = df.drop_duplicates(subset="link", keep="last")
+
+# post types: article, interview, vm, list of posts, book review
+extra_cols = (
+    "date",
+    "artwork_name",
+    "subtitle",
+    "author_bio",
+)
+for col in extra_cols:
+    df[col] = None
+
 
 df.to_csv(get_flags_path(), index=False)
