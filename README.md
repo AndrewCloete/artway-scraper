@@ -8,17 +8,17 @@ activate
 pip install -r requirements.txt
 ```
 
-Scrape to index site
+
 ```sh
 python scrape.py
-```
 
-Write the index to csv for easy viewing
-```sh
+# Taxonomies
 python stats.py
+python taxonomy2.py
+
+# Content
+python master_lables.py
+python clean_html.py
+python wpallimport.py
 ```
 
-Upload posts to wordpress
-```sh
-python wpapi.py
-```

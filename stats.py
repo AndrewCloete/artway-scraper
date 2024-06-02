@@ -1,62 +1,53 @@
 import pandas as pd
-from common import *
+import common
 
 from ParamsIndexRepo import ParamsIndexRepo, BASE_DIR
 
-visited = ParamsIndexRepo(BASE_DIR, "visited.json")
 seen = ParamsIndexRepo(BASE_DIR, "seen.json")
 
-dfv = pd.DataFrame(visited.values())
-dfv["image_count"] = dfv["image_urls"].apply(len)
-
-dfv.to_csv("/tmp/artway_index_visited.csv", index=False)
-
-dfs = pd.DataFrame(seen.values())
-dfs["id"] = dfs["id"].astype(int)
-dfs["p_id"] = dfs["p_id"].astype(int)
-dfs.sort_values(by="id", inplace=True)
-dfs.to_csv("/tmp/artway_index_seen.csv", index=False)
+df = pd.DataFrame(seen.all_href_values())
+df["id"] = df["id"].astype(int)
+df["p_id"] = df["p_id"].astype(int)
+df.sort_values(by="id", inplace=True)
 
 
 # I'm making the assumption that parents existed before children. So to solve
 # the problem of parent links nested inside children pages, I'm applying the
 # filter to only keep records where the p_id < id
 # "pl" for "parent limit"
-cols = [col for col in dfs.columns if col.startswith("p_p_")]
-cols.extend(["location", "p_location"])
-print(cols)
+p_cols = [col for col in df.columns if col.startswith("p_p_")]
+p_cols.extend(["location", "p_location"])
 
-dfs_pl = dfs[dfs["p_id"] <= dfs["id"]]
-dfs_pl.drop(columns=cols, axis=1, inplace=True)
-dfs_pl.drop_duplicates(keep="first", inplace=True)  # Drop exact duplicates
+df_pl = df[df["p_id"] <= df["id"]]
+df_pl.drop(columns=p_cols, axis=1, inplace=True)
+df_pl.drop_duplicates(keep="first", inplace=True)  # Drop exact duplicates
 
 
 filter_self_parent = (
-    filter_char(dfs_pl)
-    | filter_continent(dfs_pl)
-    | filter_period(dfs_pl)
-    | filter_country(dfs_pl)
+    common.filter_char(df_pl)
+    | common.filter_continent(df_pl)
+    | common.filter_period(df_pl)
+    | common.filter_country(df_pl)
 )
-print(dfs_pl[filter_self_parent])
 
 # The above limit is required, but not sufficien. Additionally, we can manually
 # specify ids that should not be in a parent-child relationship and remove them
 # HOWEVER, exact p_id == id must be allowed for "country", "contintent" etc
 MUTUALLY_EXCLUSIVE_IDS = [7, 8, 9]
 filter_mutually_exclusive = ~(
-    dfs_pl["p_id"].isin(MUTUALLY_EXCLUSIVE_IDS)
-    & dfs_pl["id"].isin(MUTUALLY_EXCLUSIVE_IDS)
+    df_pl["p_id"].isin(MUTUALLY_EXCLUSIVE_IDS)
+    & df_pl["id"].isin(MUTUALLY_EXCLUSIVE_IDS)
 )
 
-dfs_pl = dfs_pl[filter_mutually_exclusive | filter_self_parent]
-dfs_pl.fillna("", inplace=True)
-dfs_pl.to_csv("/tmp/artway_index_seen_limit.csv", index=False, na_rep="")
+df_pl = df_pl[filter_mutually_exclusive | filter_self_parent]
+df_pl.fillna("", inplace=True)
+df_pl.to_csv("/tmp/artway_index_seen_limit.csv", index=False, na_rep="")
 
 
-df_id = dfs[~dfs["id"].duplicated(keep="first")]
-df_id = df_id[["id", "title"]].set_index("id")
+# df_id = df[~df["id"].duplicated(keep="first")]
+# df_id = df_id[["id", "title"]].set_index("id")
 
 
-# dfs_parents = dfs.groupby(["id", "title"])["p_id"].apply(",".join)
-# print(dfs_parents)
-# dfs_parents.to_csv("/tmp/artway_parents.csv")
+# df_parents = df.groupby(["id", "title"])["p_id"].apply(",".join)
+# print(df_parents)
+# df_parents.to_csv("/tmp/artway_parents.csv")

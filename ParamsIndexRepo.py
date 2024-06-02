@@ -99,3 +99,6 @@ class ParamsIndexRepo:
         for entry in entries:
             entry["href_path"] = normalize_qparams(entry["href_path"])
         return filter_unique_hrefs(entries)
+
+    def all_href_values(self):
+        return [row for entry in self.entries.values() for row in entry]
