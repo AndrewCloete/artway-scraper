@@ -23,6 +23,14 @@ def get_master_sheet_path():
     return Path(BASE_DIR) / "master_sheet.csv"
 
 
+def get_human_sheet_path():
+    return Path(BASE_DIR) / "human_sheet.csv"
+
+
+def get_authors_path():
+    return Path(BASE_DIR) / "authors.csv"
+
+
 def get_wpallimport_path(html_select):
     return Path(BASE_DIR) / f"wpall_import_{html_select}.csv"
 
