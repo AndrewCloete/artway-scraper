@@ -1,19 +1,10 @@
 from ParamsIndexRepo import (
-    ParamsIndexRepo,
-    BASE_DIR,
+    get_df_human,
     get_authors_path,
-    get_human_sheet_path,
 )
 import pandas as pd
 
-
-visited = ParamsIndexRepo(BASE_DIR, "visited.json")
-
-posts = visited.unique_href_values()
-
-df_human = pd.read_csv(get_human_sheet_path())
-df_human = df_human.astype({"id": "int64"})
-df_human.set_index(["id", "lang"], inplace=True)
+df_human = get_df_human()
 
 print(df_human.groupby("post_type").count()[["done"]])
 

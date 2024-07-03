@@ -2,6 +2,7 @@ from pathlib import Path
 import json
 
 from urllib.parse import parse_qsl, urlencode
+import pandas as pd
 
 BASE_DIR = "/Users/user/Workspace/artway-scraper/data"
 AW_URL = "https://www.artway.eu"
@@ -29,6 +30,16 @@ def get_human_sheet_path():
 
 def get_authors_path():
     return Path(BASE_DIR) / "authors.csv"
+
+
+def get_df_human():
+    df_human = pd.read_csv(get_human_sheet_path())
+    df_human = df_human.astype({"id": "int64"})
+    return df_human.set_index(["id", "lang"])
+
+
+def get_wpallimport_cache_path(html_select):
+    return Path(BASE_DIR) / f"wpall_import_{html_select}_cache.csv"
 
 
 def get_wpallimport_path(html_select):
