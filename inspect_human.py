@@ -70,4 +70,4 @@ def get_authors(df_human: pd.DataFrame) -> pd.DataFrame:
 
 df_authors = get_authors(df_human)
 print(df_authors)
-df_authors.to_csv(get_authors_path(), na_rep="")
+df_authors.reset_index().to_csv(get_authors_path(), na_rep="")

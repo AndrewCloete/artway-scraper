@@ -28,8 +28,22 @@ def get_human_sheet_path():
     return Path(BASE_DIR) / "human_sheet.csv"
 
 
-def get_authors_path():
-    return Path(BASE_DIR) / "authors.csv"
+def get_authors_path(kind: str | None):
+    match kind:
+        case None:
+            return Path(BASE_DIR) / "authors.csv"
+        case "human":
+            return Path(BASE_DIR) / "human_authors.csv"
+        case "normal":
+            return Path(BASE_DIR) / "normal_authors.csv"
+
+
+def get_creator_path(prefix: str, kind: str):
+    return Path(BASE_DIR) / f"{prefix}_{kind}.csv"
+
+
+def get_artists_path():
+    return Path(BASE_DIR) / "artists.csv"
 
 
 def get_df_human():
