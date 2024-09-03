@@ -46,6 +46,10 @@ def get_artists_path():
     return Path(BASE_DIR) / "artists.csv"
 
 
+def get_similars_path():
+    return Path(BASE_DIR) / "similars.csv"
+
+
 def get_df_human():
     df_human = pd.read_csv(get_human_sheet_path())
     df_human = df_human.astype({"id": "int64"})

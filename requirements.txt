@@ -4,5 +4,6 @@ html2text
 beautifulsoup4
 pandas
 markdown
+scikit-learn
 
 
