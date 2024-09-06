@@ -12,8 +12,12 @@ def get_params_dir(id, lang, title):
     return Path(BASE_DIR) / "content" / f"{id}_{lang}_{title}"
 
 
+def get_html_path_named(id, lang, title, name):
+    return get_params_dir(id, lang, title) / f"{name}.html"
+
+
 def get_html_path(id, lang, title):
-    return get_params_dir(id, lang, title) / "original.html"
+    return get_html_path_named(id, lang, title, "original")
 
 
 def get_flags_path():
@@ -50,6 +54,10 @@ def get_similars_path():
     return Path(BASE_DIR) / "similars.csv"
 
 
+def get_filtered_similars_path():
+    return Path(BASE_DIR) / "similars_filtered.csv"
+
+
 def get_df_human():
     df_human = pd.read_csv(get_human_sheet_path())
     df_human = df_human.astype({"id": "int64"})
@@ -62,10 +70,6 @@ def get_wpallimport_cache_path(html_select):
 
 def get_wpallimport_path(html_select):
     return Path(BASE_DIR) / f"wpall_import_{html_select}.csv"
-
-
-def get_html_path_named(id, lang, title, name):
-    return get_params_dir(id, lang, title) / f"{name}.html"
 
 
 def normalize_qparams(qparams):
