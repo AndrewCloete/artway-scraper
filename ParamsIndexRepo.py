@@ -1,3 +1,4 @@
+import ast
 from pathlib import Path
 import json
 
@@ -24,6 +25,14 @@ def get_flags_path():
     return Path(BASE_DIR) / "flags.csv"
 
 
+def get_taxonomies_path():
+    return Path(BASE_DIR) / "taxonomies.csv"
+
+
+def get_seen_limit_path():
+    return Path(BASE_DIR) / "seen_limit.csv"
+
+
 def get_master_sheet_path():
     return Path(BASE_DIR) / "master_sheet.csv"
 
@@ -32,22 +41,22 @@ def get_human_sheet_path():
     return Path(BASE_DIR) / "human_sheet.csv"
 
 
-def get_authors_path(kind: str | None):
-    match kind:
-        case None:
-            return Path(BASE_DIR) / "authors.csv"
-        case "human":
-            return Path(BASE_DIR) / "human_authors.csv"
-        case "normal":
-            return Path(BASE_DIR) / "normal_authors.csv"
+def get_creator_path(origin: str, kind: str):
+    return Path(BASE_DIR) / f"{origin}_{kind}.csv"
 
 
-def get_creator_path(prefix: str, kind: str):
-    return Path(BASE_DIR) / f"{prefix}_{kind}.csv"
+def get_creator_df(origin: str, kind: str):
+    def parse_articles(article_str: str):
+        if "[" not in article_str:
+            return []
+        articles = ast.literal_eval(article_str)
+        return [int(x) for x in articles]
 
-
-def get_artists_path():
-    return Path(BASE_DIR) / "artists.csv"
+    return pd.read_csv(
+        str(get_creator_path(origin, kind)),
+        index_col=0,
+        converters={"articles": parse_articles},
+    )
 
 
 def get_similars_path():
@@ -58,10 +67,19 @@ def get_filtered_similars_path():
     return Path(BASE_DIR) / "similars_filtered.csv"
 
 
+def get_df_tax():
+    df = pd.read_csv(get_taxonomies_path())
+    df["taxonomies"] = df["tags"]
+    df["index"] = df.apply(lambda r: str(r["id"]) + "_" + r["lang"], axis=1)
+    df = df.astype({"id": "int64"})[["id", "lang", "taxonomies"]]
+    return df.set_index(["id", "lang"])
+
+
 def get_df_human():
-    df_human = pd.read_csv(get_human_sheet_path())
-    df_human = df_human.astype({"id": "int64"})
-    return df_human.set_index(["id", "lang"])
+    df = pd.read_csv(get_human_sheet_path())
+    df["index"] = df.apply(lambda r: str(r["id"]) + "_" + r["lang"], axis=1)
+    df = df.astype({"id": "int64"})
+    return df.set_index(["id", "lang"])
 
 
 def get_wpallimport_cache_path(html_select):

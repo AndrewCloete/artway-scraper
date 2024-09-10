@@ -1,7 +1,7 @@
 import pandas as pd
 import common
 
-from ParamsIndexRepo import ParamsIndexRepo, BASE_DIR
+from ParamsIndexRepo import ParamsIndexRepo, BASE_DIR, get_seen_limit_path
 
 seen = ParamsIndexRepo(BASE_DIR, "seen.json")
 
@@ -41,7 +41,7 @@ filter_mutually_exclusive = ~(
 
 df_pl = df_pl[filter_mutually_exclusive | filter_self_parent]
 df_pl.fillna("", inplace=True)
-df_pl.to_csv("/tmp/artway_index_seen_limit.csv", index=False, na_rep="")
+df_pl.to_csv(get_seen_limit_path(), index=False, na_rep="")
 
 
 # df_id = df[~df["id"].duplicated(keep="first")]

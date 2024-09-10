@@ -1,25 +1,11 @@
-import ast
 from ParamsIndexRepo import (
-    get_df_human,
+    get_creator_df,
     get_creator_path,
-    get_artists_path,
 )
-
-import pandas as pd
 
 
 def normalize_creator(kind: str):
-    def parse_articles(article_str: str):
-        if "[" not in article_str:
-            return []
-        articles = ast.literal_eval(article_str)
-        return [int(x) for x in articles]
-
-    df_human_creator = pd.read_csv(
-        str(get_creator_path("human", kind)),
-        index_col=0,
-        converters={"articles": parse_articles},
-    )
+    df_human_creator = get_creator_df("human", kind)
     print(df_human_creator.shape)
 
     df_human_creator["name_surname"] = df_human_creator["name_surname"].str.split(
@@ -46,29 +32,6 @@ def normalize_creator(kind: str):
     print(df_normal_creator.shape)
 
     df_normal_creator.to_csv(get_creator_path("normal", kind))
-
-
-def artists():
-    df_human = get_df_human()
-    df_human["artist_bio"] = df_human["artist_bio"].fillna("")
-    df_artists = (
-        df_human.reset_index()
-        .groupby(
-            [
-                "lang",
-                "artist_name_surname",
-                "artist_name",
-                "artist_surname",
-                "artist_bio",
-            ]
-        )["id"]
-        .apply(lambda x: list(set(x)))
-        .reset_index()
-        .rename(columns={"id": "articles"})
-    ).sort_values(by=["artist_name_surname"])
-
-    print(df_artists.shape)
-    df_artists.to_csv(get_artists_path())
 
 
 normalize_creator("artists")

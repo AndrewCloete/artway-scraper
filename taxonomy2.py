@@ -1,8 +1,10 @@
 import pandas as pd
 import common
 
+from ParamsIndexRepo import get_seen_limit_path, get_taxonomies_path
 
-df = pd.read_csv("/tmp/artway_index_seen_limit.csv")
+
+df = pd.read_csv(get_seen_limit_path())
 df["pk"] = df["id"].astype(str) + "_" + df["lang"]
 df["id"] = df["id"].astype(int)
 df["p_id"] = df["p_id"].astype(int)
@@ -102,7 +104,7 @@ for i, dfg in df.groupby(["id", "lang"]):
 
 
 df_tax = pd.DataFrame(items)
-df_tax.to_csv("/tmp/taxonomies.csv")
+df_tax.to_csv(get_taxonomies_path(), index=False)
 
 # print("-------------------------------------")
 # print(df_country)
