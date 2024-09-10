@@ -9,6 +9,7 @@ from ParamsIndexRepo import (
     get_wpallimport_cache_path,
     get_df_human,
     get_creator_df,
+    get_df_tax,
 )
 
 from dateutil import parser
@@ -117,20 +118,40 @@ def get_full_df_human():
     )
 
     df["normal_date"] = df["date"].apply(fuzzy_date_parser).ffill()
-    print(df[["artwork_century", "normal_date"]])
+    return df
 
 
 USE_CACHE = False
 HTML_SELECT = "clean"
 df_human = get_full_df_human()
-# df_posts = get_post_content_df(html_select=HTML_SELECT, use_cached=USE_CACHE)
-# df_posts.drop(columns=["title", "image_urls"], inplace=True)
-#
-# df_tax = get_df_tax()
-# df = pd.merge(df_human, df_tax, left_index=True, right_index=True)
-# df = pd.merge(df, df_posts, left_index=True, right_index=True).reset_index()
-# df["dup"] = df.duplicated(subset=["lang", "title"], keep=False)
-# df = df.sort_values(["title"])
+df_posts = get_post_content_df(html_select=HTML_SELECT, use_cached=USE_CACHE)
+df_posts.drop(columns=["title", "image_urls"], inplace=True)
+
+df_human = get_full_df_human()
+df_tax = get_df_tax()
+df = pd.merge(df_human, df_tax, left_index=True, right_index=True)
+df = pd.merge(df, df_posts, left_index=True, right_index=True).reset_index()
+df["dup"] = df.duplicated(subset=["lang", "title"], keep=False)
+df = df.sort_values(["id"])
+
+# dfg =
+#     df.groupby(["lang", "title"])["id"]
+#     .apply(lambda x: list(set(x)))
+#     .reset_index()
+#     .rename(columns={"id": "legacy_ids"})
+# )
+# print(dfg)
+
+
+agg_funcs = {col: "first" for col in df.columns if col not in ["lang", "title", "id"]}
+agg_funcs["id"] = lambda x: list(set(x))
+dfg = df.groupby(["lang", "title"]).agg(agg_funcs).reset_index()
+dfg["legacy_ids"] = dfg["id"]
+dfg["id"] = dfg["legacy_ids"].apply(lambda x: min(x))
+dfg["count"] = dfg["legacy_ids"].apply(lambda x: len(x))
+print(dfg)
+print(df.shape)
+print(dfg.shape)
 #
 # df_subset = df  # df[df["id"].isin([1248, 1249, 1250, 1251, 1252, 1253])]
 # df_subset.to_csv(get_wpallimport_path(HTML_SELECT), na_rep="", index=False)
