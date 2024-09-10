@@ -1,3 +1,4 @@
+from math import ceil
 import pandas as pd
 
 from ParamsIndexRepo import (
@@ -89,13 +90,14 @@ def get_full_df_human():
         inplace=True,
     )
 
-    def explode(df):
+    def explode(df, key):
         df = df.explode("articles")
         df["index"] = df.apply(lambda r: str(r["articles"]) + "_" + r["lang"], axis=1)
-        return df.set_index("index")["name_surname"].to_dict()
+        return df.set_index("index")[key].to_dict()
 
-    lookup_authors = explode(get_creator_df("normal", "authors"))
-    lookup_artists = explode(get_creator_df("normal", "artists"))
+    lookup_authors = explode(get_creator_df("normal", "authors"), "name_surname")
+    lookup_artists = explode(get_creator_df("normal", "artists"), "name_surname")
+    lookup_a2z = explode(get_creator_df("normal", "artists"), "surname")
 
     df["normal_author"] = df["index"].apply(
         lambda i: lookup_authors[i] if i in lookup_authors else None
@@ -103,9 +105,19 @@ def get_full_df_human():
     df["normal_artist"] = df["index"].apply(
         lambda i: lookup_artists[i] if i in lookup_artists else None
     )
+    df["a2z"] = df["index"].apply(
+        lambda i: lookup_a2z[i][0].upper() if i in lookup_a2z else None
+    )
+
+    df["artwork_date"] = df["Artwork Start Date"].apply(fuzzy_date_parser)
+    df["artwork_century"] = (
+        df["artwork_date"]
+        .apply(lambda x: ceil(x.year / 100 + 1) if x == x else None)
+        .astype("Int64")
+    )
 
     df["normal_date"] = df["date"].apply(fuzzy_date_parser).ffill()
-    print(df[["date", "normal_date"]])
+    print(df[["artwork_century", "normal_date"]])
 
 
 USE_CACHE = False
