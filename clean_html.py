@@ -17,7 +17,7 @@ visited = ParamsIndexRepo(BASE_DIR, "visited.json")
 posts = visited.unique_href_values()
 
 
-def remove_empty_elements(soup):
+def remove_empty_elements_recur(soup):
     # Find all <span> and <div> elements
     elements = soup.find_all(["span", "div"])
     empty_elements = []
@@ -39,7 +39,21 @@ def remove_empty_elements(soup):
         for element in empty_elements:
             element.decompose()
         # Recursively call the function to check again
-        remove_empty_elements(soup)
+        remove_empty_elements_recur(soup)
+
+
+def remove_empty_elements(soup):
+    elements = soup.find_all(["span", "div"])
+
+    # Identify empty elements
+    for element in elements:
+        if not element.contents:
+            element.decompose()
+
+    elements = soup.find_all(["span", "strong"])
+    for element in elements:
+        if not element.text.strip():
+            element.unwrap()
 
 
 def clean_html(post):
@@ -93,6 +107,7 @@ def clean_html(post):
             s.decompose()
             # print(id, lang, action, flag["deleted_author"])
 
+    # Add HTTP URL to images
     images = inner.find_all("img")
     for img in images:
         if "http" not in img["src"]:
@@ -119,16 +134,15 @@ def clean_html(post):
             if tag.has_attr(dt):
                 del tag.attrs[dt]
 
+    # Remove anchor tags starting with "?". This remove the top link
     anchors = inner.find_all("a")
     for a in anchors:
-        if "href" not in a:
-            continue
-        if a["href"].startswith("?"):
-            a.decompose()
+        if a.has_attr("href") and a["href"].startswith("?"):
+            a.decompose()  # Remove the tag from the document
 
-    for unwrap in ["h1", "p"]:
-        for u in inner.find_all(unwrap):
-            u.unwrap()
+    # for unwrap in ["h1", "p"]:
+    #     for u in inner.find_all(unwrap):
+    #         u.unwrap()
 
     # Does not look so good
     # spans = inner.find_all("span")
@@ -138,7 +152,8 @@ def clean_html(post):
 
     # print(inner.prettify())
 
-    remove_empty_elements(soup)
+    for _ in range(10):
+        remove_empty_elements(soup)
 
     path_clean = get_html_path_named(id, lang, title, "clean")
     with open(path_clean, "w") as f:
