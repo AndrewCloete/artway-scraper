@@ -1,3 +1,4 @@
+import re
 from operator import itemgetter
 from ParamsIndexRepo import (
     ParamsIndexRepo,
@@ -6,7 +7,6 @@ from ParamsIndexRepo import (
     get_html_path_named,
     get_flags_path,
     AW_URL,
-    get_master_sheet_path,
 )
 from bs4 import BeautifulSoup, Tag
 import pandas as pd
@@ -45,7 +45,8 @@ def remove_empty_elements(soup):
 def clean_html(post):
     id, title = itemgetter("id", "title")(post)
     lang = post["lang"] if "lang" in post else "none"
-    flag = {"id": id}
+    action = post["action"] if "action" in post else "none"
+    flag = {"id": id, "lang": lang, "action": action}
     path_original = get_html_path(id, lang, title)
     with open(path_original, "r") as f:
         content = f.read()
@@ -63,19 +64,34 @@ def clean_html(post):
     inner = inner_f[0]
     del inner["class"]
 
-    h1_anchor = soup.select('a[href*="id="]')
-    for a in h1_anchor:
-        a.decompose()
+    # Remove titles
+    h1s = soup.select("h1")
+    if len(h1s) > 0:
+        flag["deleted_title"] = str(h1s[0].get_text())
+        h1s[0].decompose()
 
     # Replace each <b> tag with <strong> tag
     for b in inner.find_all("b"):
-        b.replace_with(soup.new_tag("strong", **b.attrs))
+        b.name = "strong"
+
+    def find_innermost_text(element) -> str:
+        if element.string:
+            return element.string
+        for child in element.children:
+            result = find_innermost_text(child)
+            if result:
+                return result
+        return ""
 
     # Best effort infer subtitle and author
-    strong = inner.find_all("strong")
-    if len(strong) > 1:
-        flag["strong0"] = strong[0].text
-        flag["strong1"] = strong[1].text
+    pattern = re.compile(r"^\b(by|door)\s{0,5}[A-Z]")
+    strongs = inner.find_all("strong")
+    for s in strongs:
+        txt = find_innermost_text(s)
+        if len(txt) < 50 and pattern.search(txt):
+            flag["deleted_author"] = str(txt) + ""
+            s.decompose()
+            # print(id, lang, action, flag["deleted_author"])
 
     images = inner.find_all("img")
     for img in images:
@@ -127,7 +143,7 @@ def clean_html(post):
     path_clean = get_html_path_named(id, lang, title, "clean")
     with open(path_clean, "w") as f:
         f.write(str(inner))
-        # content = f.read()
+    # content = f.read()
 
     # print(f"code -d '{path_original}' '{path_clean}'")
     # print(f"open '{path_original}' && open '{path_clean}'")
@@ -138,29 +154,29 @@ def clean_html(post):
 
 
 flags = []
-for post in posts:  # [1020:1040]:
+# for post in posts[500:700]:
+# for post in posts[1020:1021]:
+for post in posts:
     flag = clean_html(post)
     flags.append(flag)
 
+df_flags = pd.DataFrame(flags).astype({"id": "int64"})
+df_flags.to_csv(get_flags_path(), index=False)
 
-df_master = pd.read_csv(get_master_sheet_path())
-df_flags = pd.DataFrame(flags)
-df_master = df_master.astype({"id": "int64"})
-df_flags = df_flags.astype({"id": "int64"})
-
-
-df = df_master.merge(df_flags, on="id", how="inner")
-df = df.drop_duplicates(subset="link", keep="last")
-
-# post types: article, interview, vm, list of posts, book review
-extra_cols = (
-    "date",
-    "artwork_name",
-    "subtitle",
-    "author_bio",
-)
-for col in extra_cols:
-    df[col] = None
+df_flags = pd.DataFrame(flags).astype({"id": "int64"}).set_index(["id", "lang"])
+# df_human = get_df_human()
+# df = df_human.merge(df_flags, how="inner")
+# df = df.drop_duplicates(subset="link", keep="last")
+#
+# # post types: article, interview, vm, list of posts, book review
+# extra_cols = (
+#     "date",
+#     "artwork_name",
+#     "subtitle",
+#     "author_bio",
+# )
+# for col in extra_cols:
+#     df[col] = None
 
 
-df.to_csv(get_flags_path(), index=False)
+# df.to_csv(get_flags_path(), index=False)

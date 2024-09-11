@@ -71,7 +71,15 @@ def get_df_tax():
     df = pd.read_csv(get_taxonomies_path())
     df["taxonomies"] = df["tags"]
     df["index"] = df.apply(lambda r: str(r["id"]) + "_" + r["lang"], axis=1)
-    df = df.astype({"id": "int64"})[["id", "lang", "taxonomies"]]
+    df = df.astype({"id": "int64"})[["id", "lang", "index", "taxonomies"]]
+    return df.set_index(["id", "lang"])
+
+
+def get_df_flags():
+    df = pd.read_csv(get_flags_path())
+    df["index"] = df.apply(lambda r: str(r["id"]) + "_" + r["lang"], axis=1)
+    df = df.astype({"id": "int64"})
+    df.drop(["table_len", "max_table_image_count"], axis=1, inplace=True)
     return df.set_index(["id", "lang"])
 
 
