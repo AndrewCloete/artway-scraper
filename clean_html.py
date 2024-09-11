@@ -42,6 +42,7 @@ def remove_empty_elements_recur(soup):
         remove_empty_elements_recur(soup)
 
 
+# Decompose the completely empty elements, but only unwrap the elements with blank chars
 def remove_empty_elements(soup):
     elements = soup.find_all(["span", "div"])
 

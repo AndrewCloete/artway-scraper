@@ -123,8 +123,30 @@ def get_full_df_human():
         .apply(lambda x: ceil(x / 100) if x == x else None)
         .astype("Int64")
     )
+    df["Artwork Century"] = df["Artwork Century"].fillna(df["artwork_century"])
 
     df["normal_date"] = df["date"].apply(fuzzy_date_parser).ffill()
+
+    df["bib"] = df["Bible References"]
+
+    def clean_bib(index):
+        def f(x):
+            if x != x:
+                return None
+            x = x.split(",")[0]
+            x.split(";")
+            vars = x.split(";")
+            vars = vars + [None] * (5 - len(vars))
+            return vars[index]
+
+        return f
+
+    df["bib_book"] = df["bib"].apply(clean_bib(0))
+    df["bib_chpS"] = df["bib"].apply(clean_bib(1))
+    df["bib_verS"] = df["bib"].apply(clean_bib(2))
+    df["bib_chpE"] = df["bib"].apply(clean_bib(3))
+    df["bib_verE"] = df["bib"].apply(clean_bib(4))
+
     return df
 
 
@@ -137,6 +159,11 @@ COLS = [
     "normal_date",
     "date",
     "post_type",
+    "continent",
+    "country",
+    "period",
+    "taxonomies",
+    "Tags",
     "title",
     "deleted_title",
     "normal_artist",
@@ -146,9 +173,13 @@ COLS = [
     "author",
     "deleted_author",
     "body_text",
-    "subtitle",
+    "bib_book",
+    "bib_chpS",
+    "bib_verS",
+    "bib_chpE",
+    "bib_verE",
     "Bible References",
-    "Tags",
+    "subtitle",
     "Excerpt",
     "artwork_information",
     "artwork_name",
@@ -158,12 +189,13 @@ COLS = [
     "artwork_century",
     "Artwork End Date",
     "References",
-    "taxonomies",
 ]
 
 USE_CACHE = False
 HTML_SELECT = "clean"
-df_human = get_full_df_human()
+
+df_tax = get_df_tax().drop(["index"], axis=1)
+
 df_posts = get_post_content_df(html_select=HTML_SELECT, use_cached=USE_CACHE)
 df_posts.drop(columns=["title", "image_urls", "index"], inplace=True)
 
@@ -193,16 +225,19 @@ agg_funcs = {
     if col not in ["lang", "title", "id", "taxonomies"]
 }
 agg_funcs["id"] = lambda x: list(set(x))
-agg_funcs["taxonomies"] = lambda x: list(set(x))
+agg_funcs["taxonomies"] = lambda x: set().union(*x)
 dfg = df.groupby(["lang", "title"]).agg(agg_funcs).reset_index()
 
 dfg["legacy_ids"] = dfg["id"]
 dfg["id"] = dfg["legacy_ids"].apply(lambda x: min(x))
+dfg["legacy_ids"] = dfg["legacy_ids"].apply(lambda x: ",".join(map(str, x)))
 dfg["count"] = dfg["legacy_ids"].apply(lambda x: len(x))
+dfg["taxonomies"] = dfg["taxonomies"].apply(lambda x: ",".join(x) if x else None)
 
 dynamic_cols = [col for col in dfg.columns if col not in COLS]
 final_cols = COLS + dynamic_cols
 dfg = dfg[final_cols].sort_values("id")
+# print(dfg["taxonomies"][~dfg["taxonomies"].isna()])
 print(dfg)
 print(df.shape)
 print(dfg.shape)

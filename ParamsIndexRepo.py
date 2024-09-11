@@ -67,11 +67,23 @@ def get_filtered_similars_path():
     return Path(BASE_DIR) / "similars_filtered.csv"
 
 
+def split_tags(x):
+    if x != x:
+        return []
+    return x.split(",")
+
+
 def get_df_tax():
     df = pd.read_csv(get_taxonomies_path())
-    df["taxonomies"] = df["tags"]
+    df["taxonomies"] = df["tags"].apply(split_tags)
+    df["continent"] = df["p_continent"]
+    df["country"] = df["p_country"]
+    df["period"] = df["p_period"]
+    df["char"] = df["p_char"]
     df["index"] = df.apply(lambda r: str(r["id"]) + "_" + r["lang"], axis=1)
-    df = df.astype({"id": "int64"})[["id", "lang", "index", "taxonomies"]]
+    df = df.astype({"id": "int64"})[
+        ["id", "lang", "index", "taxonomies", "continent", "country", "period", "char"]
+    ]
     return df.set_index(["id", "lang"])
 
 

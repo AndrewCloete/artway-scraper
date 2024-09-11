@@ -1,3 +1,4 @@
+import string
 import pandas as pd
 import common
 
@@ -25,6 +26,11 @@ lookup = {
     }
     for cat in CATEGORIES
 }
+
+all_categories = []
+for cat in CATEGORIES:
+    all_categories += list(lookup[cat].values())
+all_categories += list(string.ascii_uppercase)
 
 
 def replace_category_ids(cat):
@@ -81,6 +87,8 @@ def extract_taxonomies(r):
         if p_id_lookup in title_lookups:
             p_title = title_lookups[p_id_lookup]
             add_tag(p_title)
+
+    tags = [t for t in tags if t not in all_categories]
 
     t["tags"] = ",".join(tags)
 
