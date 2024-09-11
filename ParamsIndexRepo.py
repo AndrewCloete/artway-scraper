@@ -80,14 +80,17 @@ def get_df_flags():
     df["index"] = df.apply(lambda r: str(r["id"]) + "_" + r["lang"], axis=1)
     df = df.astype({"id": "int64"})
     df.drop(["table_len", "max_table_image_count"], axis=1, inplace=True)
-    return df.set_index(["id", "lang"])
+    return df.set_index(["id", "lang", "action"])
 
 
 def get_df_human():
     df = pd.read_csv(get_human_sheet_path())
+    df["action"] = df["post_type"].apply(
+        lambda x: "list" if x == "list of posts" else "show"
+    )
     df["index"] = df.apply(lambda r: str(r["id"]) + "_" + r["lang"], axis=1)
     df = df.astype({"id": "int64"})
-    return df.set_index(["id", "lang"])
+    return df.set_index(["id", "lang", "action"])
 
 
 def get_wpallimport_cache_path(html_select):

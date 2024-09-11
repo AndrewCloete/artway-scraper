@@ -35,6 +35,7 @@ def post_content_to_df(posts, html_select) -> pd.DataFrame:
         p["lang"] = post["lang"]
         p["id"] = post["id"]
         p["title"] = post["title"]
+        p["action"] = post["action"] if "action" in post else "none"
         p["image_urls"] = [
             url if url.startswith("http") else AW_URL + url
             for url in post["image_urls"]
@@ -71,7 +72,7 @@ def get_post_content_df(html_select: str, use_cached: bool) -> pd.DataFrame:
     df = get()
     df["index"] = df["id"] + "_" + df["lang"]
     df = df.astype({"id": "int64"})
-    return df.set_index(["id", "lang"])
+    return df.set_index(["id", "lang", "action"])
 
 
 def get_full_df_human():
@@ -131,18 +132,19 @@ COLS = [
     "count",
     "lang",
     "id",
+    "action",
     "legacy_ids",
     "normal_date",
     "date",
     "post_type",
-    "normal_author",
-    "author",
-    "deleted_author",
     "title",
     "deleted_title",
     "normal_artist",
     "artist_name_surname",
     "a2z",
+    "normal_author",
+    "author",
+    "deleted_author",
     "body_text",
     "subtitle",
     "Bible References",
@@ -172,7 +174,7 @@ df_flags = get_df_flags().drop(["index"], axis=1)
 df = pd.merge(df_human, df_tax, left_index=True, right_index=True)
 df = pd.merge(df, df_flags, left_index=True, right_index=True)
 df = pd.merge(df, df_posts, left_index=True, right_index=True).reset_index()
-df["dup"] = df.duplicated(subset=["lang", "title"], keep=False)
+# df["dup"] = df.duplicated(subset=["lang", "title"], keep=False)
 df = df.sort_values(["id"])
 
 
