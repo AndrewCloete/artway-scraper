@@ -100,7 +100,11 @@ def get_df_human():
     df["action"] = df["post_type"].apply(
         lambda x: "list" if x == "list of posts" else "show"
     )
+    df["real_lang"] = df["lang"]
+    df["lang"] = df["lang"].apply(lambda lang: lang if lang in ["en", "nl"] else "en")
     df["index"] = df.apply(lambda r: str(r["id"]) + "_" + r["lang"], axis=1)
+    not_found = df["comments"].apply(lambda c: "not found" in c if c == c else False)
+    df = df[~not_found]
     df = df.astype({"id": "int64"})
     return df.set_index(["id", "lang", "action"])
 

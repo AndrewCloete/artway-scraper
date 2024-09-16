@@ -99,7 +99,7 @@ def clean_html(post):
         return ""
 
     # Best effort infer subtitle and author
-    pattern = re.compile(r"^\b(by|door)\s{0,5}[A-Z]")
+    pattern = re.compile(r"^\b(by|door|durch|par)\s{0,5}[A-Z]")
     strongs = inner.find_all("strong")
     for s in strongs:
         txt = find_innermost_text(s)
@@ -141,6 +141,15 @@ def clean_html(post):
         if a.has_attr("href") and a["href"].startswith("?"):
             a.decompose()  # Remove the tag from the document
 
+    # horz_rule = inner.find(
+    #     ["div", "span", "strong", "p"], class_=re.compile("\\*\\*\\*\\*")
+    # )
+    horz_rule = inner.find(string=re.compile(r"\*\*\*\*"))
+    if horz_rule:
+        print("Found rule!!! " + id)
+        horz_rule.replace_with(soup.new_tag("hr"))
+        flag["hr"] = True
+
     # for unwrap in ["h1", "p"]:
     #     for u in inner.find_all(unwrap):
     #         u.unwrap()
@@ -154,11 +163,20 @@ def clean_html(post):
     # print(inner.prettify())
 
     for _ in range(10):
-        remove_empty_elements(soup)
+        remove_empty_elements(inner)
+
+    # Post HTML cleaning
+    inner_str = str(inner)
+    if "->" in inner_str:
+        print("FOUND -> " + id)
+    if "-&gt;" in inner_str:
+        print("FOUND -&gt; " + id)
+    inner_str = inner_str.replace("->", "")
+    inner_str = inner_str.replace("-&gt;", "")
 
     path_clean = get_html_path_named(id, lang, title, "clean")
     with open(path_clean, "w") as f:
-        f.write(str(inner))
+        f.write(inner_str)
     # content = f.read()
 
     # print(f"code -d '{path_original}' '{path_clean}'")

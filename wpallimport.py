@@ -127,6 +127,19 @@ def get_full_df_human():
 
     df["normal_date"] = df["date"].apply(fuzzy_date_parser).ffill()
 
+    def map_catagory(post_type):
+        m = {
+            "article": "Articles",
+            "interview": "Interview",
+            "vm": "Visual Meditations",
+            "newsletter": "Newsletters",
+            "Artist profile": "Artist Profile",
+            "book review": "Book Review",
+        }
+        return m[post_type] if post_type in m else post_type
+
+    df["category"] = df["post_type"].apply(map_catagory)
+
     df["bib"] = df["Bible References"]
 
     def clean_bib(index):
@@ -134,9 +147,16 @@ def get_full_df_human():
             if x != x:
                 return None
             x = x.split(",")[0]
-            x.split(";")
-            vars = x.split(";")
-            vars = vars + [None] * (5 - len(vars))
+            outer = x.split("-")
+            outer = outer + [None] * (2 - len(outer))
+            left = outer[0].split(";")
+            left = left + [None] * (3 - len(left))
+            right = outer[1].split(";") if outer[1] else []
+            right = [None] * (2 - len(right)) + right
+            if right[1] is not None and right[0] is None:
+                right[0] = left[1]
+
+            vars = left + right
             return vars[index]
 
         return f
@@ -153,12 +173,14 @@ def get_full_df_human():
 COLS = [
     "count",
     "lang",
+    "real_lang",
     "id",
     "action",
     "legacy_ids",
     "normal_date",
     "date",
     "post_type",
+    "category",
     "continent",
     "country",
     "period",
@@ -166,6 +188,7 @@ COLS = [
     "Tags",
     "title",
     "deleted_title",
+    "title_in_content",
     "normal_artist",
     "artist_name_surname",
     "a2z",
@@ -173,6 +196,7 @@ COLS = [
     "author",
     "deleted_author",
     "body_text",
+    "hr",
     "bib_book",
     "bib_chpS",
     "bib_verS",
@@ -199,6 +223,7 @@ df_tax = get_df_tax().drop(["index"], axis=1)
 df_posts = get_post_content_df(html_select=HTML_SELECT, use_cached=USE_CACHE)
 df_posts.drop(columns=["title", "image_urls", "index"], inplace=True)
 
+
 df_human = get_full_df_human()
 df_tax = get_df_tax().drop(["index"], axis=1)
 df_flags = get_df_flags().drop(["index"], axis=1)
@@ -206,6 +231,11 @@ df_flags = get_df_flags().drop(["index"], axis=1)
 df = pd.merge(df_human, df_tax, left_index=True, right_index=True)
 df = pd.merge(df, df_flags, left_index=True, right_index=True)
 df = pd.merge(df, df_posts, left_index=True, right_index=True).reset_index()
+
+
+df["title_in_content"] = df.apply(
+    lambda row: row["title"] in row["body_text"] if "title" in row else False
+)
 # df["dup"] = df.duplicated(subset=["lang", "title"], keep=False)
 df = df.sort_values(["id"])
 
