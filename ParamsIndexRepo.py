@@ -117,6 +117,10 @@ def get_wpallimport_path(html_select):
     return Path(BASE_DIR) / f"wpall_import_{html_select}.csv"
 
 
+def get_wpallimport_xlsx(html_select):
+    return Path(BASE_DIR) / f"wpall_import_{html_select}.xlsx"
+
+
 def normalize_qparams(qparams):
     sorted_params = sorted(parse_qsl(qparams))
     return urlencode(sorted_params)

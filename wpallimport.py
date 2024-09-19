@@ -1,5 +1,6 @@
 from math import ceil
 import pandas as pd
+import csv
 
 from ParamsIndexRepo import (
     ParamsIndexRepo,
@@ -12,9 +13,61 @@ from ParamsIndexRepo import (
     get_creator_df,
     get_df_tax,
     get_wpallimport_path,
+    get_wpallimport_xlsx,
 )
 
 from dateutil import parser
+
+valid_tags = [
+    "Architecture",
+    "Art History",
+    "Art in Church and Worship",
+    "Articles francais",
+    "ArtWay Newsletters",
+    "Beauty and Creativity",
+    "Christian Art Worldwide",
+    "Christianity and Art",
+    "Christianity and Culture",
+    "Church of the Month",
+    "Church Windows",
+    "Contemporary Art and Culture",
+    "Contemporary Christian Art",
+    "H.R. Rookmaaker",
+    "Hugo van der – H.R. Rookmaaker",
+    "Icons",
+    "Image and Imagination",
+    "Introductory",
+    "Materials for Use in Churches",
+    "Old Testament",
+    "Organizations Church and Art",
+    "Portuguese",
+    "Religion and Art",
+    "Theology and Art",
+    "Organisaties kerk en kunst",
+    "Hedendaagse chr. kunst",
+    "Beeld en verbeelding",
+    "Wette",
+    "Schoonheid en creativiteit",
+    "Architecten",
+    "Christendom en cultuur",
+    "Kunst in kerk en eredienst",
+    "Kerkramen",
+    "Nieuwe Testament",
+    "Christendom en kunst",
+    "Kunstenaars kerkelijke kunst",
+    "Hedendaagse kunst",
+    "Theologie en kunst",
+    "Kerkarchitectuur",
+    "Kerk en kunst",
+    "Kunstgeschiedenis",
+    "Artikelen kerk en kunst",
+    "Kunstenaars kerkramen",
+    "Woord en beeld bijbelstudies",
+    "Inleidend",
+    "Reistips",
+    "Kerk & kunst",
+]
+valid_tags = [v.lower() for v in valid_tags]
 
 
 # Custom parsing function
@@ -170,39 +223,62 @@ def get_full_df_human():
     return df
 
 
-COLS = [
+def fix_tags(row):
+    og_tags = [row["Tags"]] if row["Tags"] else []
+    clean_tax = [t.strip() for t in row["taxonomies"]]
+    filtered_tax = [t for t in clean_tax if t.lower() in valid_tags]
+    tags_set = set(og_tags + filtered_tax)
+    return ",".join(tags_set)
+
+
+REMOVE_COLS = [
     "count",
+    "lang",
+    "date",
+    "taxonomies",
+    "Tags",
+    "deleted_title",
+    "title_in_content",
+    "author",
+    "deleted_author",
+    "hr",
+    "Bible References",
+]
+
+COLS = [
+    # "count",
     "lang",
     "real_lang",
     "id",
     "action",
     "legacy_ids",
     "normal_date",
-    "date",
+    # "date",
     "post_type",
     "category",
     "continent",
     "country",
     "period",
-    "taxonomies",
-    "Tags",
+    # "taxonomies",
+    # "Tags",
+    "normal_tags",
     "title",
-    "deleted_title",
-    "title_in_content",
+    # "deleted_title",
+    # "title_in_content",
     "normal_artist",
     "artist_name_surname",
     "a2z",
     "normal_author",
-    "author",
-    "deleted_author",
+    # "author",
+    # "deleted_author",
     "body_text",
-    "hr",
+    # "hr",
     "bib_book",
     "bib_chpS",
     "bib_verS",
     "bib_chpE",
     "bib_verE",
-    "Bible References",
+    # "Bible References",
     "subtitle",
     "Excerpt",
     "artwork_information",
@@ -213,6 +289,7 @@ COLS = [
     "artwork_century",
     "Artwork End Date",
     "References",
+    "image_urls",
 ]
 
 USE_CACHE = False
@@ -221,7 +298,7 @@ HTML_SELECT = "clean"
 df_tax = get_df_tax().drop(["index"], axis=1)
 
 df_posts = get_post_content_df(html_select=HTML_SELECT, use_cached=USE_CACHE)
-df_posts.drop(columns=["title", "image_urls", "index"], inplace=True)
+df_posts.drop(columns=["title", "index"], inplace=True)
 
 
 df_human = get_full_df_human()
@@ -255,23 +332,34 @@ agg_funcs = {
     if col not in ["lang", "title", "id", "taxonomies"]
 }
 agg_funcs["id"] = lambda x: list(set(x))
-agg_funcs["taxonomies"] = lambda x: set().union(*x)
-dfg = df.groupby(["lang", "title"]).agg(agg_funcs).reset_index()
+agg_funcs["taxonomies"] = lambda x: [*set().union(*x)]
+dfg: pd.DataFrame = df.groupby(["lang", "title"]).agg(agg_funcs).reset_index()
+
+dfg["normal_tags"] = dfg.apply(fix_tags, axis=1)
 
 dfg["legacy_ids"] = dfg["id"]
 dfg["id"] = dfg["legacy_ids"].apply(lambda x: min(x))
 dfg["legacy_ids"] = dfg["legacy_ids"].apply(lambda x: ",".join(map(str, x)))
+dfg["legacy_ids"] = dfg["legacy_ids"].astype(str)
 dfg["count"] = dfg["legacy_ids"].apply(lambda x: len(x))
 dfg["taxonomies"] = dfg["taxonomies"].apply(lambda x: ",".join(x) if x else None)
 
 dynamic_cols = [col for col in dfg.columns if col not in COLS]
 final_cols = COLS + dynamic_cols
+final_cols = [col for col in final_cols if col not in REMOVE_COLS]
 dfg = dfg[final_cols].sort_values("id")
 # print(dfg["taxonomies"][~dfg["taxonomies"].isna()])
 print(dfg)
 print(df.shape)
 print(dfg.shape)
-dfg.to_csv(get_wpallimport_path(HTML_SELECT), na_rep="", index=False)
+dfg.to_csv(
+    get_wpallimport_path(HTML_SELECT), na_rep="", index=False, quoting=csv.QUOTE_ALL
+)
+dfg.to_excel(
+    get_wpallimport_xlsx(HTML_SELECT),
+    na_rep="",
+    index=False,
+)
 #
 # df_subset = df  # df[df["id"].isin([1248, 1249, 1250, 1251, 1252, 1253])]
 # df_subset.to_csv(get_wpallimport_path(HTML_SELECT), na_rep="", index=False)
