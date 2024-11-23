@@ -113,6 +113,7 @@ def clean_html(post):
     for img in images:
         if "http" not in img["src"]:
             img["src"] = AW_URL + img["src"]
+            img["src"] = img["src"].replace(" ", "%20")
 
     # Table images
     tables = inner.find_all("table")

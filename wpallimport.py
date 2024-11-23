@@ -305,9 +305,14 @@ df_human = get_full_df_human()
 df_tax = get_df_tax().drop(["index"], axis=1)
 df_flags = get_df_flags().drop(["index"], axis=1)
 
+# print(df_human.reset_index()[df_human.reset_index()["id"] == 2412])
+# print(df_tax.reset_index()[df_tax.reset_index()["id"] == 2412])
+# print(df_flags.reset_index()[df_flags.reset_index()["id"] == 2412])
+
 df = pd.merge(df_human, df_tax, left_index=True, right_index=True)
 df = pd.merge(df, df_flags, left_index=True, right_index=True)
 df = pd.merge(df, df_posts, left_index=True, right_index=True).reset_index()
+# print(df.reset_index()[df.reset_index()["id"] == 2412])
 
 
 df["title_in_content"] = df.apply(
@@ -349,7 +354,8 @@ final_cols = COLS + dynamic_cols
 final_cols = [col for col in final_cols if col not in REMOVE_COLS]
 dfg = dfg[final_cols].sort_values("id")
 # print(dfg["taxonomies"][~dfg["taxonomies"].isna()])
-print(dfg)
+# print(dfg)
+print(dfg[dfg["legacy_ids"].apply(lambda x: "2412" in x)])
 print(df.shape)
 print(dfg.shape)
 dfg.to_csv(
