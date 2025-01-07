@@ -29,6 +29,10 @@ def get_taxonomies_path():
     return Path(BASE_DIR) / "taxonomies.csv"
 
 
+def get_tags_path():
+    return Path(BASE_DIR) / "tags.csv"
+
+
 def get_seen_limit_path():
     return Path(BASE_DIR) / "seen_limit.csv"
 

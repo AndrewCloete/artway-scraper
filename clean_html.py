@@ -108,12 +108,30 @@ def clean_html(post):
             s.decompose()
             # print(id, lang, action, flag["deleted_author"])
 
+    def fix_original_url(url: str):
+        if "http" not in url:
+            return AW_URL + url
+
+    def replace_with_wp_url(url: str):
+        WP_URL = "https://en.artway.eu/wp-content/uploads/2024/09/"
+        suffix = url.split("/")[-1]
+        suffix = (
+            suffix.replace(" ", "-")
+            .replace("(", "")
+            .replace(")", "")
+            .replace("JPG", "jpg")
+            .replace("PNG", "png")
+        )
+        return WP_URL + suffix
+
     # Add HTTP URL to images
     images = inner.find_all("img")
     for img in images:
-        if "http" not in img["src"]:
-            img["src"] = AW_URL + img["src"]
-            img["src"] = img["src"].replace(" ", "%20")
+        # For first time import so that wordpress can download the images
+        # img["src"] = fix_original_url(img["src"])
+
+        # For import update so that the content can be replace
+        img["src"] = replace_with_wp_url(img["src"])
 
     # Table images
     tables = inner.find_all("table")

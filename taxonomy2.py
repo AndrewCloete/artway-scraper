@@ -2,7 +2,7 @@ import string
 import pandas as pd
 import common
 
-from ParamsIndexRepo import get_seen_limit_path, get_taxonomies_path
+from ParamsIndexRepo import get_seen_limit_path, get_taxonomies_path, get_tags_path
 
 
 df = pd.read_csv(get_seen_limit_path())
@@ -113,6 +113,7 @@ for i, dfg in df.groupby(["id", "lang"]):
 
 df_tax = pd.DataFrame(items)
 df_tax.to_csv(get_taxonomies_path(), index=False)
+
 
 # print("-------------------------------------")
 # print(df_country)

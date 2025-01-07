@@ -79,6 +79,12 @@ def fuzzy_date_parser(date_str):
         return pd.NaT
 
 
+def clean_url(url):
+    url = url if url.startswith("http") else AW_URL + url
+    url = url.replace(" ", "%20")
+    return url
+
+
 def post_content_to_df(posts, html_select) -> pd.DataFrame:
     wpall_posts = []
     for post in posts:
@@ -89,10 +95,7 @@ def post_content_to_df(posts, html_select) -> pd.DataFrame:
         p["id"] = post["id"]
         p["title"] = post["title"]
         p["action"] = post["action"] if "action" in post else "none"
-        p["image_urls"] = [
-            url if url.startswith("http") else AW_URL + url
-            for url in post["image_urls"]
-        ]
+        p["image_urls"] = [clean_url(url) for url in post["image_urls"]]
 
         html_path = get_html_path_named(
             post["id"], post["lang"], post["title"], html_select
@@ -358,6 +361,8 @@ dfg = dfg[final_cols].sort_values("id")
 print(dfg[dfg["legacy_ids"].apply(lambda x: "2412" in x)])
 print(df.shape)
 print(dfg.shape)
+dfg = dfg[dfg["id"] == 56]
+dfg = dfg[dfg["real_lang"] == "en"]
 dfg.to_csv(
     get_wpallimport_path(HTML_SELECT), na_rep="", index=False, quoting=csv.QUOTE_ALL
 )
