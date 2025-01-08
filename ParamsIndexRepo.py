@@ -33,6 +33,14 @@ def get_tags_path():
     return Path(BASE_DIR) / "tags.csv"
 
 
+def get_tags_reference_path():
+    return Path(BASE_DIR) / "tags_reference.csv"
+
+
+def get_post_type_changes_path():
+    return Path(BASE_DIR) / "post_type_changes.csv"
+
+
 def get_seen_limit_path():
     return Path(BASE_DIR) / "seen_limit.csv"
 

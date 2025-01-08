@@ -110,7 +110,9 @@ def clean_html(post):
 
     def fix_original_url(url: str):
         if "http" not in url:
-            return AW_URL + url
+            url = AW_URL + url
+        url = url.replace(" ", "%20")
+        return url
 
     def replace_with_wp_url(url: str):
         WP_URL = "https://en.artway.eu/wp-content/uploads/2024/09/"
@@ -128,10 +130,10 @@ def clean_html(post):
     images = inner.find_all("img")
     for img in images:
         # For first time import so that wordpress can download the images
-        # img["src"] = fix_original_url(img["src"])
+        img["src"] = fix_original_url(img["src"])
 
         # For import update so that the content can be replace
-        img["src"] = replace_with_wp_url(img["src"])
+        # img["src"] = replace_with_wp_url(img["src"])
 
     # Table images
     tables = inner.find_all("table")

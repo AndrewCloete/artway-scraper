@@ -2,7 +2,10 @@ import string
 import pandas as pd
 import common
 
-from ParamsIndexRepo import get_seen_limit_path, get_taxonomies_path, get_tags_path
+from ParamsIndexRepo import (
+    get_seen_limit_path,
+    get_taxonomies_path,
+)
 
 
 df = pd.read_csv(get_seen_limit_path())

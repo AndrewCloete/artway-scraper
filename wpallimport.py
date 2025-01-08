@@ -16,58 +16,13 @@ from ParamsIndexRepo import (
     get_wpallimport_xlsx,
 )
 
+from clean_tags import get_tags_lookup, get_types_lookup, get_types_to_tags_lookup
+
 from dateutil import parser
 
-valid_tags = [
-    "Architecture",
-    "Art History",
-    "Art in Church and Worship",
-    "Articles francais",
-    "ArtWay Newsletters",
-    "Beauty and Creativity",
-    "Christian Art Worldwide",
-    "Christianity and Art",
-    "Christianity and Culture",
-    "Church of the Month",
-    "Church Windows",
-    "Contemporary Art and Culture",
-    "Contemporary Christian Art",
-    "H.R. Rookmaaker",
-    "Hugo van der – H.R. Rookmaaker",
-    "Icons",
-    "Image and Imagination",
-    "Introductory",
-    "Materials for Use in Churches",
-    "Old Testament",
-    "Organizations Church and Art",
-    "Portuguese",
-    "Religion and Art",
-    "Theology and Art",
-    "Organisaties kerk en kunst",
-    "Hedendaagse chr. kunst",
-    "Beeld en verbeelding",
-    "Wette",
-    "Schoonheid en creativiteit",
-    "Architecten",
-    "Christendom en cultuur",
-    "Kunst in kerk en eredienst",
-    "Kerkramen",
-    "Nieuwe Testament",
-    "Christendom en kunst",
-    "Kunstenaars kerkelijke kunst",
-    "Hedendaagse kunst",
-    "Theologie en kunst",
-    "Kerkarchitectuur",
-    "Kerk en kunst",
-    "Kunstgeschiedenis",
-    "Artikelen kerk en kunst",
-    "Kunstenaars kerkramen",
-    "Woord en beeld bijbelstudies",
-    "Inleidend",
-    "Reistips",
-    "Kerk & kunst",
-]
-valid_tags = [v.lower() for v in valid_tags]
+TAGS_LOOKUP = get_tags_lookup("en")
+TYPES_LOOKUP = get_types_lookup()
+TYPE_TO_TAGS = get_types_to_tags_lookup()
 
 
 # Custom parsing function
@@ -184,15 +139,12 @@ def get_full_df_human():
     df["normal_date"] = df["date"].apply(fuzzy_date_parser).ffill()
 
     def map_catagory(post_type):
-        m = {
-            "article": "Articles",
-            "interview": "Interview",
-            "vm": "Visual Meditations",
-            "newsletter": "Newsletters",
-            "Artist profile": "Artist Profile",
-            "book review": "Book Review",
-        }
-        return m[post_type] if post_type in m else post_type
+        if post_type in TYPES_LOOKUP:
+            new_name = TYPES_LOOKUP[post_type]
+            if new_name:
+                return new_name
+            return post_type
+        return "Article"
 
     df["category"] = df["post_type"].apply(map_catagory)
 
@@ -229,9 +181,33 @@ def get_full_df_human():
 def fix_tags(row):
     og_tags = [row["Tags"]] if row["Tags"] else []
     clean_tax = [t.strip() for t in row["taxonomies"]]
-    filtered_tax = [t for t in clean_tax if t.lower() in valid_tags]
+
+    # Filter tags
+    filtered_tax = []
+    for tax in clean_tax:
+        if tax in TAGS_LOOKUP:
+            new_tag = TAGS_LOOKUP[tax]
+            if new_tag["rename"] == "X":
+                pass
+            elif not new_tag["rename"]:
+                filtered_tax.append(tax)
+            else:
+                filtered_tax.append(new_tag["rename"])
+        else:
+            new_tag = "UNKOWN_" + tax
+            filtered_tax.append(new_tag)
+
     tags_set = set(og_tags + filtered_tax)
-    return ",".join(tags_set)
+
+    post_type = row["post_type"]
+    if post_type in TYPE_TO_TAGS:
+        new_name = TYPE_TO_TAGS[post_type]
+        if new_name:
+            tags_set.add(new_name)
+        else:
+            tags_set.add(post_type)
+
+    return ";".join(tags_set)
 
 
 REMOVE_COLS = [
@@ -361,7 +337,7 @@ dfg = dfg[final_cols].sort_values("id")
 print(dfg[dfg["legacy_ids"].apply(lambda x: "2412" in x)])
 print(df.shape)
 print(dfg.shape)
-dfg = dfg[dfg["id"] == 56]
+# dfg = dfg[dfg["id"] == 56]
 dfg = dfg[dfg["real_lang"] == "en"]
 dfg.to_csv(
     get_wpallimport_path(HTML_SELECT), na_rep="", index=False, quoting=csv.QUOTE_ALL
