@@ -168,7 +168,19 @@ def clean_html(post):
     horz_rule = inner.find(string=re.compile(r"\*\*\*\*"))
     if horz_rule:
         print("Found rule!!! " + id)
-        horz_rule.replace_with(soup.new_tag("hr"))
+        # horz_rule.replace_with(soup.new_tag("hr"))
+        new_div = soup.new_tag("div")
+
+        first_br = soup.new_tag("br")
+        second_br = soup.new_tag("br")
+        asterisks_p = soup.new_tag("p")
+        asterisks_p.string = "**********"  # Add the 10 asterisks
+
+        # Append the new elements to the div
+        new_div.append(first_br)
+        new_div.append(asterisks_p)
+        new_div.append(second_br)
+        horz_rule.replace_with(new_div)
         flag["hr"] = True
 
     # for unwrap in ["h1", "p"]:

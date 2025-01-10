@@ -1,11 +1,15 @@
-from ParamsIndexRepo import (
-    get_creator_df,
-    get_creator_path,
-)
+from ParamsIndexRepo import get_creator_df, get_df_tax, get_creator_path
 
 
 def normalize_creator(kind: str):
     df_human_creator = get_creator_df("human", kind)
+    print(df_human_creator)
+    country_lookup = (
+        get_df_tax()
+        .reset_index()[["index", "country"]]
+        .set_index("index")["country"]
+        .to_dict()
+    )
     print(df_human_creator.shape)
 
     df_human_creator["name_surname"] = df_human_creator["name_surname"].str.split(
@@ -28,10 +32,24 @@ def normalize_creator(kind: str):
     df_normal_creator["articles"] = df_normal_creator["articles"].apply(
         lambda x: sorted(list(set(x)))
     )
+
+    def find_country(row):
+        indexs = [f"{id}_{row['lang']}" for id in row["articles"]]
+        for index in indexs:
+            if index in country_lookup:
+                if index == "457_en":
+                    print(index)
+                    print(country_lookup[index])
+                return country_lookup[index]
+        return None
+
+    df_normal_creator["country"] = df_normal_creator.apply(
+        lambda row: find_country(row), axis=1
+    )
     df_normal_creator = df_normal_creator.sort_values(by=["name_surname"])
     print(df_normal_creator.shape)
 
     df_normal_creator.to_csv(get_creator_path("normal", kind))
 
 
-normalize_creator("artists")
+normalize_creator("authors")

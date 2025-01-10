@@ -67,4 +67,5 @@ def get_authors(df_human: pd.DataFrame) -> pd.DataFrame:
 
 df_authors = get_authors(df_human)
 print(df_authors)
-df_authors.reset_index().to_csv(get_creator_path("human", "authors"), na_rep="")
+# df_authors.reset_index().to_csv(get_creator_path("human", "authors"), na_rep="")
+df_artists.reset_index().to_csv(get_creator_path("human", "artists3"), na_rep="")

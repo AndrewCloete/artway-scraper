@@ -49,6 +49,7 @@ def post_content_to_df(posts, html_select) -> pd.DataFrame:
         p["lang"] = post["lang"]
         p["id"] = post["id"]
         p["title"] = post["title"]
+        p["Thumbnail title"] = post["title"]
         p["action"] = post["action"] if "action" in post else "none"
         p["image_urls"] = [clean_url(url) for url in post["image_urls"]]
 
@@ -136,7 +137,8 @@ def get_full_df_human():
     )
     df["Artwork Century"] = df["Artwork Century"].fillna(df["artwork_century"])
 
-    df["normal_date"] = df["date"].apply(fuzzy_date_parser).ffill()
+    df["qc_date"] = df["date"].apply(fuzzy_date_parser)
+    df["normal_date"] = df["qc_date"].ffill()
 
     def map_catagory(post_type):
         if post_type in TYPES_LOOKUP:
@@ -210,20 +212,6 @@ def fix_tags(row):
     return ";".join(tags_set)
 
 
-REMOVE_COLS = [
-    "count",
-    "lang",
-    "date",
-    "taxonomies",
-    "Tags",
-    "deleted_title",
-    "title_in_content",
-    "author",
-    "deleted_author",
-    "hr",
-    "Bible References",
-]
-
 COLS = [
     # "count",
     "lang",
@@ -232,7 +220,7 @@ COLS = [
     "action",
     "legacy_ids",
     "normal_date",
-    # "date",
+    "qc_date",
     "post_type",
     "category",
     "continent",
@@ -242,6 +230,7 @@ COLS = [
     # "Tags",
     "normal_tags",
     "title",
+    "Thumbnail title",
     # "deleted_title",
     # "title_in_content",
     "normal_artist",
@@ -269,6 +258,42 @@ COLS = [
     "Artwork End Date",
     "References",
     "image_urls",
+]
+
+RENAME_COLS = {
+    "real_lang": "Language",
+    "id": "Upload ID",
+    "normal_date": "Date",
+    "period": "Art Period",
+    "normal_tags": "Tags",
+    "title": "Name",
+    "normal_artist": "Artist Name",
+    "normal_author": "Author",
+    "body_text": "Post Content",
+    "bib_book": "Bible Book",
+    "Excerpt": "Intro Text",
+}
+
+REMOVE_COLS = [
+    "count",
+    "lang",
+    # "date",
+    "action",
+    "post_type",
+    "artist_name_surname",
+    "a2z",
+    "artwork_date",
+    "Artwork Century",
+    "artwork_century",
+    "References",
+    "taxonomies",
+    "Tags",
+    "deleted_title",
+    "title_in_content",
+    "author",
+    "deleted_author",
+    "hr",
+    "Bible References",
 ]
 
 USE_CACHE = False
@@ -332,13 +357,14 @@ dynamic_cols = [col for col in dfg.columns if col not in COLS]
 final_cols = COLS + dynamic_cols
 final_cols = [col for col in final_cols if col not in REMOVE_COLS]
 dfg = dfg[final_cols].sort_values("id")
+dfg = dfg.rename(columns=RENAME_COLS)
 # print(dfg["taxonomies"][~dfg["taxonomies"].isna()])
 # print(dfg)
 print(dfg[dfg["legacy_ids"].apply(lambda x: "2412" in x)])
 print(df.shape)
 print(dfg.shape)
 # dfg = dfg[dfg["id"] == 56]
-dfg = dfg[dfg["real_lang"] == "en"]
+dfg = dfg[dfg["Language"] == "en"]
 dfg.to_csv(
     get_wpallimport_path(HTML_SELECT), na_rep="", index=False, quoting=csv.QUOTE_ALL
 )
