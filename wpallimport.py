@@ -20,7 +20,7 @@ from clean_tags import get_tags_lookup, get_types_lookup, get_types_to_tags_look
 
 from dateutil import parser
 
-TAGS_LOOKUP = get_tags_lookup("en")
+TAGS_LOOKUP = get_tags_lookup("nl")
 TYPES_LOOKUP = get_types_lookup()
 TYPE_TO_TAGS = get_types_to_tags_lookup()
 
@@ -364,7 +364,25 @@ print(dfg[dfg["legacy_ids"].apply(lambda x: "2412" in x)])
 print(df.shape)
 print(dfg.shape)
 # dfg = dfg[dfg["id"] == 56]
-dfg = dfg[dfg["Language"] == "en"]
+dfg = dfg[dfg["Language"] != "en"]
+
+
+# Merge with problems sheet to get items with very larg post content
+def merge_problem_items(dfg):
+    df_problems = pd.read_csv("data/problem_items.csv")[
+        ["Name", "Slug", "Item ID", "Upload ID", "Post Content"]
+    ]
+    df_problems = df_problems[df_problems["Post Content"].isnull()]
+    df_problems = df_problems.drop(columns=["Post Content"])
+    dfg = dfg.drop(columns=["Name"])
+    dfg = pd.merge(df_problems, dfg, on="Upload ID", how="left").reset_index()
+    dfg = dfg[["Name", "Slug", "Item ID", "Upload ID", "Post Content"]]
+    return dfg
+
+
+# dfg = merge_problem_items(dfg)
+
+
 dfg.to_csv(
     get_wpallimport_path(HTML_SELECT), na_rep="", index=False, quoting=csv.QUOTE_ALL
 )
