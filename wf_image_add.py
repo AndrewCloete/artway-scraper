@@ -25,7 +25,8 @@ def image_status(image: str):
     return "has image"
 
 
-df = pd.read_csv("data/wf_export_en.csv")
+LANG = "nl"
+df = pd.read_csv(f"/tmp/wf_export_{LANG}.csv")
 
 df["Thumbnails"] = df["Post Content"].apply(find_first_image)
 df["Thumbnail"] = df["Thumbnails"].apply(clean_image_col)
@@ -33,5 +34,5 @@ df["Image status"] = df["Thumbnails"].apply(image_status)
 
 df.to_csv("data/wf_export_en_out.csv")
 df[["Name", "Slug", "Item ID", "Image status", "Thumbnail"]].to_csv(
-    "data/wf_export_en_out_small.csv"
+    f"/tmp/wf_export_{LANG}_out_small.csv"
 )

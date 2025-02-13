@@ -6,6 +6,7 @@ from ParamsIndexRepo import (
     ParamsIndexRepo,
     AW_URL,
     BASE_DIR,
+    get_bibbook_reference_path,
     get_df_flags,
     get_html_path_named,
     get_wpallimport_cache_path,
@@ -16,13 +17,29 @@ from ParamsIndexRepo import (
     get_wpallimport_xlsx,
 )
 
-from clean_tags import get_tags_lookup, get_types_lookup, get_types_to_tags_lookup
+from clean_tags import (
+    get_tags_lookup,
+    get_types_lookup,
+    get_types_to_tags_lookup,
+    get_tags_to_lang,
+    get_tags_to_category,
+)
 
 from dateutil import parser
 
-TAGS_LOOKUP = get_tags_lookup("nl")
-TYPES_LOOKUP = get_types_lookup()
-TYPE_TO_TAGS = get_types_to_tags_lookup()
+
+def get_bibbook_lookup():
+    df = pd.read_csv(get_bibbook_reference_path())
+    return df.set_index("book")["rename"].to_dict()
+
+
+LANG = "en"
+TAGS_LOOKUP = get_tags_lookup(LANG)
+TYPES_LOOKUP = get_types_lookup(LANG)
+TYPE_TO_TAGS = get_types_to_tags_lookup(LANG)
+LANG_FROM_TAX = get_tags_to_lang(LANG)
+CAT_FROM_TAX = get_tags_to_category(LANG)
+BOOK_LOOKUP = get_bibbook_lookup()
 
 
 # Custom parsing function
@@ -171,7 +188,13 @@ def get_full_df_human():
 
         return f
 
+    def rename_book(book):
+        if book in BOOK_LOOKUP:
+            return BOOK_LOOKUP[book]
+        return book
+
     df["bib_book"] = df["bib"].apply(clean_bib(0))
+    df["bib_book"] = df["bib_book"].apply(rename_book)
     df["bib_chpS"] = df["bib"].apply(clean_bib(1))
     df["bib_verS"] = df["bib"].apply(clean_bib(2))
     df["bib_chpE"] = df["bib"].apply(clean_bib(3))
@@ -180,13 +203,39 @@ def get_full_df_human():
     return df
 
 
+def fix_lang_from_tax(row):
+    taxs = row["normal_tags"].split(";")
+    for tax in taxs:
+        if tax in LANG_FROM_TAX:
+            return tax
+        else:
+            return row["real_lang"]
+
+
+def fix_cat_from_tax(row):
+    taxs = row["normal_tags"].split(";")
+    for tax in taxs:
+        if tax in CAT_FROM_TAX:
+            return tax
+        else:
+            return row["category"]
+
+
 def fix_tags(row):
     og_tags = [row["Tags"]] if row["Tags"] else []
     clean_tax = [t.strip() for t in row["taxonomies"]]
 
+    tags_set = set(og_tags + clean_tax)
+    split_clean = []
+    for tax in tags_set:
+        if ", " in tax:
+            split_clean.extend(tax.split(", "))
+        else:
+            split_clean.append(tax)
+
     # Filter tags
     filtered_tax = []
-    for tax in clean_tax:
+    for tax in split_clean:
         if tax in TAGS_LOOKUP:
             new_tag = TAGS_LOOKUP[tax]
             if new_tag["rename"] == "X":
@@ -199,17 +248,17 @@ def fix_tags(row):
             new_tag = "UNKOWN_" + tax
             filtered_tax.append(new_tag)
 
-    tags_set = set(og_tags + filtered_tax)
+    filtered_tax = set(filtered_tax)
 
     post_type = row["post_type"]
     if post_type in TYPE_TO_TAGS:
         new_name = TYPE_TO_TAGS[post_type]
         if new_name:
-            tags_set.add(new_name)
+            filtered_tax.add(new_name)
         else:
-            tags_set.add(post_type)
+            filtered_tax.add(post_type)
 
-    return ";".join(tags_set)
+    return ";".join(filtered_tax)
 
 
 COLS = [
@@ -345,10 +394,13 @@ agg_funcs["taxonomies"] = lambda x: [*set().union(*x)]
 dfg: pd.DataFrame = df.groupby(["lang", "title"]).agg(agg_funcs).reset_index()
 
 dfg["normal_tags"] = dfg.apply(fix_tags, axis=1)
+dfg["real_lang"] = dfg.apply(fix_lang_from_tax, axis=1)
+dfg["category"] = dfg.apply(fix_cat_from_tax, axis=1)
+
 
 dfg["legacy_ids"] = dfg["id"]
 dfg["id"] = dfg["legacy_ids"].apply(lambda x: min(x))
-dfg["legacy_ids"] = dfg["legacy_ids"].apply(lambda x: ",".join(map(str, x)))
+dfg["legacy_ids"] = dfg["legacy_ids"].apply(lambda x: ";".join(map(str, x)))
 dfg["legacy_ids"] = dfg["legacy_ids"].astype(str)
 dfg["count"] = dfg["legacy_ids"].apply(lambda x: len(x))
 dfg["taxonomies"] = dfg["taxonomies"].apply(lambda x: ",".join(x) if x else None)
@@ -357,6 +409,9 @@ dynamic_cols = [col for col in dfg.columns if col not in COLS]
 final_cols = COLS + dynamic_cols
 final_cols = [col for col in final_cols if col not in REMOVE_COLS]
 dfg = dfg[final_cols].sort_values("id")
+# for i in dfg["bib_book"].unique():
+#     print(i)
+
 dfg = dfg.rename(columns=RENAME_COLS)
 # print(dfg["taxonomies"][~dfg["taxonomies"].isna()])
 # print(dfg)
@@ -364,7 +419,15 @@ print(dfg[dfg["legacy_ids"].apply(lambda x: "2412" in x)])
 print(df.shape)
 print(dfg.shape)
 # dfg = dfg[dfg["id"] == 56]
-dfg = dfg[dfg["Language"] != "en"]
+
+if LANG != "en":
+    dfg = dfg[dfg["Language"] != "en"]
+else:
+    dfg = dfg[dfg["Language"] == "en"]
+
+for t in dfg["Tags"]:
+    if "UNKOWN_" in t:
+        print(t)
 
 
 # Merge with problems sheet to get items with very larg post content

@@ -33,7 +33,8 @@ def get_post_type_changes():
 
 def get_tags_reference(lang: str):
     df = pd.read_csv(get_tags_reference_path())
-    return df[df["lang"] == lang]
+    df = df[df["lang"] == lang]
+    return df
 
 
 def get_tags_lookup(lang: str):
@@ -41,6 +42,20 @@ def get_tags_lookup(lang: str):
     df["rename"] = df["rename"].fillna(False)
     records = df.to_dict("records")
     return {r["tag"]: r for r in records}
+
+
+def get_tags_to_category(lang: str):
+    df = get_tags_reference(lang)
+    df = df[df["move"] == "category"]
+    df["rename"] = df["rename"].fillna(df["tag"])
+    return list(df["rename"])
+
+
+def get_tags_to_lang(lang: str):
+    df = get_tags_reference(lang)
+    df = df[df["move"] == "lang"]
+    df["rename"] = df["rename"].fillna(df["tag"])
+    return list(df["rename"])
 
 
 def get_list_of_valid_tags(lang: str):
@@ -56,33 +71,33 @@ def get_list_of_valid_tags(lang: str):
     )
 
 
-def get_list_of_valid_types():
+def get_list_of_valid_types(lang: str):
     _, df_types = get_post_type_changes()
     return pd.DataFrame(
-        list(df_types["new_name"].fillna(df_types["category"])),
+        list(df_types["new_name_" + lang].fillna(df_types["category"])),
     )
 
 
-def get_types_lookup():
+def get_types_lookup(lang: str):
     _, df_types = get_post_type_changes()
-    df_types["new_name"] = df_types["new_name"].fillna(False)
+    df_types["new_name"] = df_types["new_name_" + lang].fillna(False)
     df_types = df_types.set_index("category")["new_name"]
     return df_types.to_dict()
 
 
-def get_types_to_tags_lookup():
+def get_types_to_tags_lookup(lang: str):
     df_tags, _ = get_post_type_changes()
-    df_tags["new_name"] = df_tags["new_name"].fillna(False)
+    df_tags["new_name"] = df_tags["new_name_" + lang].fillna(False)
     df_tags = df_tags.set_index("category")["new_name"]
     return df_tags.to_dict()
 
 
 if __name__ == "__main__":
-    print(get_list_of_valid_tags("en"))  # .to_csv("data/list_of_tags.csv")
+    print(get_list_of_valid_tags())  # .to_csv("data/list_of_tags.csv")
     get_list_of_valid_types().to_csv("data/list_of_posts.csv")
     # print(get_list_of_valid_tags("nl"))
 
-    print(get_tags_lookup("en"))
+    print(get_tags_lookup())
     print()
     print(get_types_lookup())
     print()
